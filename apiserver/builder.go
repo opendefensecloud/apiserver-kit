@@ -8,7 +8,7 @@ import (
 	"net"
 
 	"github.com/spf13/cobra"
-	"go.opendefense.cloud/sl/apiserver/rest"
+	"go.opendefense.cloud/kit/apiserver/rest"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"

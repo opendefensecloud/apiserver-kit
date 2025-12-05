@@ -26,9 +26,9 @@ ADDLICENSE_VERSION ?= v1.1.1
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
 ENVTEST_K8S_VERSION ?= 1.34.1
 
-export GOPRIVATE=*.go.opendefense.cloud/sl/
-export GNOSUMDB=*.go.opendefense.cloud/sl/
-export GNOPROXY=*.go.opendefense.cloud/sl/
+export GOPRIVATE=*.go.opendefense.cloud/kit/
+export GNOSUMDB=*.go.opendefense.cloud/kit/
+export GNOPROXY=*.go.opendefense.cloud/kit/
 
 ##@ General
 

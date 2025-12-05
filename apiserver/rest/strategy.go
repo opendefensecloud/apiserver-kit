@@ -6,7 +6,7 @@ package rest
 import (
 	"context"
 
-	"go.opendefense.cloud/sl/apiserver/resource"
+	"go.opendefense.cloud/kit/apiserver/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"

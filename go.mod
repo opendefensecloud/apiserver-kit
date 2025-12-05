@@ -1,4 +1,4 @@
-module go.opendefense.cloud/sl
+module go.opendefense.cloud/kit
 
 go 1.25.2
 
