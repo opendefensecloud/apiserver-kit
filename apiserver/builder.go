@@ -168,8 +168,8 @@ func (b *Builder) Execute() int {
 			return pluginInitialisers, nil
 		}
 	}
-	// Set up TLS certificates for secure serving.
-	utilruntime.Must(b.recommendedOptions.SecureServing.MaybeDefaultWithSelfSignedCerts("localhost", b.alternateDNS, []net.IP{netutils.ParseIPSloppy("127.0.0.1")}))
+	// Set up TLS certificates for secure serving if possible and not otherwise provided.
+	_ = b.recommendedOptions.SecureServing.MaybeDefaultWithSelfSignedCerts("localhost", b.alternateDNS, []net.IP{netutils.ParseIPSloppy("127.0.0.1")})
 
 	// Use default component registry if not provided.
 	if b.componentGlobalsRegistry == nil {
