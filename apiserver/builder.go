@@ -8,6 +8,7 @@ import (
 	"net"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"go.opendefense.cloud/kit/apiserver/rest"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -41,6 +42,8 @@ type SharedInformerFactory interface {
 	Start(stopCh <-chan struct{})
 }
 
+type AddFlagsFn func(*pflag.FlagSet)
+
 // APIGroupFn returns an APIGroupInfo for installing an API group into the server.
 type APIGroupFn func(scheme *runtime.Scheme, codecs serializer.CodecFactory, c *genericapiserver.CompletedConfig) genericapiserver.APIGroupInfo
 
@@ -59,6 +62,7 @@ type Builder struct {
 	componentGlobalsRegistry               basecompatibility.ComponentGlobalsRegistry
 	recommendedConfigFns                   []RecommendedConfigFn
 	apiGroupFns                            []APIGroupFn
+	addFlagsFns                            []AddFlagsFn
 }
 
 // NewBuilder creates a new API server builder with the given runtime scheme.
@@ -69,6 +73,7 @@ func NewBuilder(scheme *runtime.Scheme) *Builder {
 		sharedInformerFactories: []SharedInformerFactory{},
 		apiGroupFns:             []APIGroupFn{},
 		groupVersions:           []schema.GroupVersion{},
+		addFlagsFns:             []AddFlagsFn{},
 	}
 }
 
@@ -122,6 +127,17 @@ func (b *Builder) WithSharedInformerFactory(f SharedInformerFactory) *Builder {
 		return b
 	}
 	b.sharedInformerFactories = append(b.sharedInformerFactories, f)
+	return b
+}
+
+// WithFlags registers AddFlagsFn functions to be called when creating the command.
+func (b *Builder) WithFlags(fns ...AddFlagsFn) *Builder {
+	for _, fn := range fns {
+		if fn == nil {
+			continue
+		}
+		b.addFlagsFns = append(b.addFlagsFns, fn)
+	}
 	return b
 }
 
@@ -317,6 +333,10 @@ func (b *Builder) Execute() int {
 	utilruntime.Must(b.componentGlobalsRegistry.SetEmulationVersionMapping(b.componentName, basecompatibility.DefaultKubeComponent, versionToKubeVersion))
 
 	b.componentGlobalsRegistry.AddFlags(flags)
+
+	for _, addFlags := range b.addFlagsFns {
+		addFlags(flags)
+	}
 
 	// TODO: add kube version compatibility matrix and feature gates
 
