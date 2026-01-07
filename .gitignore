@@ -46,3 +46,6 @@ tmp/
 deep-docs/
 
 *.coverprofile
+
+# Temp files from example
+/example/bin
