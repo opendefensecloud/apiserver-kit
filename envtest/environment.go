@@ -17,6 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
+type ProcessArgs = utilapiserver.ProcessArgs
+
 type Environment struct {
 	cfg       *rest.Config
 	env       *envtest.Environment
@@ -24,6 +26,7 @@ type Environment struct {
 	k8sClient client.Client
 	apiServer *utilapiserver.APIServer
 	mainPath  string
+	extraArgs ProcessArgs
 }
 
 func NewEnvironment(mainPath string, crdDirectoryPaths, apiServiceDirectoryPaths []string) (*Environment, error) {
@@ -41,6 +44,10 @@ func NewEnvironment(mainPath string, crdDirectoryPaths, apiServiceDirectoryPaths
 	}, nil
 }
 
+func (e *Environment) SetAPIServerExtraArgs(args ProcessArgs) {
+	e.extraArgs = args
+}
+
 func (e *Environment) Start(scheme *runtime.Scheme, writer io.Writer) (client.Client, error) {
 	cfg, err := utilsenvtest.StartWithExtensions(e.env, e.ext)
 	if err != nil {
@@ -54,6 +61,7 @@ func (e *Environment) Start(scheme *runtime.Scheme, writer io.Writer) (client.Cl
 
 	apiServer, err := utilapiserver.New(cfg, utilapiserver.Options{
 		MainPath:     e.mainPath,
+		Args:         e.extraArgs,
 		BuildOptions: []buildutils.BuildOption{buildutils.ModModeMod},
 		ETCDServers:  []string{e.env.ControlPlane.Etcd.URL.String()},
 		Host:         e.ext.APIServiceInstallOptions.LocalServingHost,
