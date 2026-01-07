@@ -75,17 +75,6 @@ test: setup-envtest ginkgo ## Run all tests
 	@KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -cover --fail-fast --require-suite -covermode count --output-dir=$(BUILD_PATH) -coverprofile=example.full.coverprofile $(testargs)
 	@cat example.full.coverprofile | grep -v /example/api > example.coverprofile
 
-.PHONY: docker-build
-docker-build: docker-build-apiserver docker-build-manager ## Build apiserver and manager image
-
-.PHONY: docker-build-apiserver
-docker-build-apiserver: ## Build apiserver image
-	$(DOCKER) build --target apiserver -t ${APISERVER_IMG} .
-
-.PHONY: docker-build-manager
-docker-build-manager: ## Build manager image
-	$(DOCKER) build --target manager -t ${MANAGER_IMG} .
-
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
