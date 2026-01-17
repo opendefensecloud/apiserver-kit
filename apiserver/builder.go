@@ -330,7 +330,7 @@ func (b *Builder) Execute() int {
 		}
 		return mappedVer
 	}
-	utilruntime.Must(b.componentGlobalsRegistry.SetEmulationVersionMapping(b.componentName, basecompatibility.DefaultKubeComponent, versionToKubeVersion))
+	utilruntime.Must(b.componentGlobalsRegistry.SetVersionMapping(b.componentName, basecompatibility.DefaultKubeComponent, versionToKubeVersion))
 
 	b.componentGlobalsRegistry.AddFlags(flags)
 

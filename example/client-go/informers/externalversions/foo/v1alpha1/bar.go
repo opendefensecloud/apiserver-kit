@@ -41,7 +41,7 @@ func NewBarInformer(client versioned.Interface, namespace string, resyncPeriod t
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredBarInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
@@ -66,7 +66,7 @@ func NewFilteredBarInformer(client versioned.Interface, namespace string, resync
 				}
 				return client.FooV1alpha1().Bars(namespace).Watch(ctx, options)
 			},
-		},
+		}, client),
 		&apifoov1alpha1.Bar{},
 		resyncPeriod,
 		indexers,

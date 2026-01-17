@@ -48,13 +48,25 @@ kube::codegen::gen_helpers \
     --boilerplate "${SCRIPT_DIR}/boilerplate.go.txt" \
     "${PROJECT_DIR}/api"
 
+# NOTE: unsure why, but openapi-gen opens files not in read-only mode, so let's
+#       workaround this for now by setting chmod for relevant modules
+declare -a GOMODS=(
+  "k8s.io/apimachinery"
+  "k8s.io/api"
+)
+echo "Setting permissions for files of relevant go modules to 644"
+for MOD in "${GOMODS[@]}"; do
+  find "$(go list -json -m -u "${MOD}" | jq -r '.Dir')" -type f -exec chmod 644 -- {} +
+done
+
+
 # TODO: use kube::codegen::gen_openapi, see commented block below (works and generates same code but exit code != 0)
 mapfile -t input_dirs < <(qualify-gvs "${THIS_PKG}/api" "$ALL_VERSION_GROUPS")
 "$OPENAPI_GEN" \
     --output-dir "$PROJECT_DIR/client-go/openapi" \
     --output-pkg "${THIS_PKG}/client-go/openapi" \
-    --output-file "zz_generated.openapi.go" \
-    --output-model-name-file "zz_generated.openapi.go" \
+    --output-file "zz_generated.model_name.go" \
+    --output-model-name-file "zz_generated.model_name.go" \
     --report-filename "$PROJECT_DIR/client-go/openapi/api_violations.report" \
     --go-header-file "$SCRIPT_DIR/boilerplate.go.txt" \
     "k8s.io/apimachinery/pkg/apis/meta/v1" \
@@ -65,15 +77,11 @@ mapfile -t input_dirs < <(qualify-gvs "${THIS_PKG}/api" "$ALL_VERSION_GROUPS")
     "${input_dirs[@]}"
 
 # kube::codegen::gen_openapi \
-#     --output-dir "$PROJECT_DIR/client-go/openapi" \
+#     --output-dir "${PROJECT_DIR}/client-go/openapi" \
 #     --output-pkg "${THIS_PKG}/client-go/openapi" \
-#     --report-filename "$PROJECT_DIR/client-go/openapi/api_violations.report" \
-#     --boilerplate "$SCRIPT_DIR/boilerplate.go.txt" \
-#     --extra-pkgs "k8s.io/apimachinery/pkg/apis/meta/v1" \
-#     --extra-pkgs "k8s.io/apimachinery/pkg/runtime" \
-#     --extra-pkgs "k8s.io/apimachinery/pkg/version" \
-#     --extra-pkgs "k8s.io/api/core/v1" \
-#     --extra-pkgs "k8s.io/apimachinery/pkg/api/resource" \
+#     --report-filename "/dev/null" \
+#     --output-model-name-file "zz_generated.model_name.go" \
+#     --boilerplate "${PROJECT_DIR}/hack/boilerplate.go.txt" \
 #     "${PROJECT_DIR}/api"
 
 kube::codegen::gen_client \

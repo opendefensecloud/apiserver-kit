@@ -11,6 +11,8 @@ import (
 
 // BarApplyConfiguration represents a declarative configuration of the Bar type for use
 // with apply.
+//
+// Bar is just an example.
 type BarApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -28,6 +30,7 @@ func Bar(name, namespace string) *BarApplyConfiguration {
 	b.WithAPIVersion("foo.opendefense.cloud/v1alpha1")
 	return b
 }
+
 func (b BarApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
