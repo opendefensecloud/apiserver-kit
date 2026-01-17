@@ -63,7 +63,7 @@ mod: ## Do go mod tidy, download, verify
 
 .PHONY: lint
 lint: addlicense golangci-lint ## Run linters such as golangci-lint and addlicence checks
-	find . -not -path '*/.*' -name '*.go' -exec $(ADDLICENSE) -check  -l apache -s=only -check {} +
+	find . -not -path '*/.*' -name '*.go' -not -path './example/*' -exec $(ADDLICENSE) -check  -l apache -s=only -check {} +
 	$(GOLANGCI_LINT) run -v
 
 .PHONY: test
