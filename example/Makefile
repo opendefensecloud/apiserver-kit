@@ -104,4 +104,4 @@ $(SETUP_ENVTEST): $(LOCALBIN)
 .PHONY: openapi-gen
 openapi-gen: $(OPENAPI_GEN) ## Download openapi-gen locally if necessary.
 $(OPENAPI_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/openapi-gen || GOBIN=$(LOCALBIN) go install k8s.io/kube-openapi/cmd/openapi-gen
+	GOBIN=$(LOCALBIN) go install k8s.io/kube-openapi/cmd/openapi-gen

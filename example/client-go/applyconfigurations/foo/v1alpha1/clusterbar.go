@@ -11,6 +11,8 @@ import (
 
 // ClusterBarApplyConfiguration represents a declarative configuration of the ClusterBar type for use
 // with apply.
+//
+// ClusterBar is the Schema for the endpoints API
 type ClusterBarApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
@@ -27,6 +29,7 @@ func ClusterBar(name string) *ClusterBarApplyConfiguration {
 	b.WithAPIVersion("foo.opendefense.cloud/v1alpha1")
 	return b
 }
+
 func (b ClusterBarApplyConfiguration) IsApplyConfiguration() {}
 
 // WithKind sets the Kind field in the declarative configuration to the given value
