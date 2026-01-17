@@ -12,6 +12,7 @@ HACK_DIR ?= $(shell cd hack 2>/dev/null && pwd)
 LOCALBIN ?= $(BUILD_PATH)/bin
 
 GO ?= go
+OSV_SCANNER ?= osv-scanner
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
@@ -65,6 +66,10 @@ mod: ## Do go mod tidy, download, verify
 lint: addlicense golangci-lint ## Run linters such as golangci-lint and addlicence checks
 	find . -not -path '*/.*' -name '*.go' -not -path './example/*' -exec $(ADDLICENSE) -check  -l apache -s=only -check {} +
 	$(GOLANGCI_LINT) run -v
+
+.PHONY: scan
+scan:
+	$(OSV_SCANNER) scan -r .
 
 .PHONY: test
 test: setup-envtest ginkgo ## Run all tests
