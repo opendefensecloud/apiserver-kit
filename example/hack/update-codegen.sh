@@ -28,6 +28,7 @@ kube::codegen::gen_helpers \
 
 # NOTE: unsure why, but openapi-gen opens files not in read-only mode, so let's
 #       workaround this for now by setting chmod for relevant modules
+#       https://github.com/kubernetes/kubernetes/issues/136295
 declare -a GOMODS=(
   "k8s.io/apimachinery"
   "k8s.io/api"
