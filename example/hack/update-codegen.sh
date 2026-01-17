@@ -89,6 +89,7 @@ kube::codegen::gen_openapi \
     --report-filename "$PROJECT_DIR/client-go/openapi/api_violations.report" --update-report \
     --output-model-name-file "zz_generated.model_name.go" \
     --boilerplate "${PROJECT_DIR}/hack/boilerplate.go.txt" \
+    --extra-pkgs "k8s.io/api/core/v1" \
     "${PROJECT_DIR}/api"
 
 kube::codegen::gen_client \
