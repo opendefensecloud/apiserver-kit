@@ -11,10 +11,12 @@ PROJECT_DIR="$SCRIPT_DIR/.."
 # shellcheck disable=SC2269
 OPENAPI_GEN="$OPENAPI_GEN"
 
-(cd "$PROJECT_DIR"; go mod download)
+# we set up a temporary GOPATH as we are manipulating modules, check NOTE below
+GOPATH="$PROJECT_DIR/bin/tmp"
+mkdir -p "$GOPATH"
 
-export GOROOT="${GOROOT:-"$(go env GOROOT)"}"
-export GOPATH="${GOPATH:-"$(go env GOPATH)"}"
+echo "Changing CWD and using different GOPATH=$GOPATH"
+(cd "$PROJECT_DIR"; go mod download)
 
 CODEGEN_PKG=$(go list -m -f '{{.Dir}}' k8s.io/code-generator)
 # shellcheck disable=SC1091 # we trust kube_codegen.sh
@@ -30,13 +32,6 @@ declare -a GOMODS=(
   "k8s.io/apimachinery"
   "k8s.io/api"
 )
-function reverse_chmod {
-  echo "Removing modified go modules"
-  for MOD in "${GOMODS[@]}"; do
-    sudo rm -rf "$(go list -json -m -u "${MOD}" | jq -r '.Dir')"
-  done
-}
-trap reverse_chmod EXIT
 echo "Setting permissions for files of relevant go modules to 644"
 for MOD in "${GOMODS[@]}"; do
   find "$(go list -json -m -u "${MOD}" | jq -r '.Dir')" -type f -exec chmod 644 -- {} +
