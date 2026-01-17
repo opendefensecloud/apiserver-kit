@@ -19,7 +19,7 @@ SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 OPENAPI_GEN ?= $(LOCALBIN)/openapi-gen
 
-GINKGO_VERSION ?= v2.27.3
+GINKGO_VERSION ?= $(shell go list -json -m -u github.com/onsi/ginkgo/v2 | jq -r '.Version')
 GOLANGCI_LINT_VERSION ?= v2.5.0
 SETUP_ENVTEST_VERSION ?= release-0.22
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
