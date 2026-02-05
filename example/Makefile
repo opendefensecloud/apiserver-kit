@@ -12,24 +12,25 @@ HACK_DIR ?= $(shell cd hack 2>/dev/null && pwd)
 LOCALBIN ?= $(BUILD_PATH)/bin
 
 GO ?= go
-OSV_SCANNER ?= osv-scanner
+DOCKER ?= docker
 GINKGO ?= $(LOCALBIN)/ginkgo
 GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 SETUP_ENVTEST ?= $(LOCALBIN)/setup-envtest
-ADDLICENSE ?= $(LOCALBIN)/addlicense
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 OPENAPI_GEN ?= $(LOCALBIN)/openapi-gen
 
 GINKGO_VERSION ?= $(shell go list -json -m -u github.com/onsi/ginkgo/v2 | jq -r '.Version')
 GOLANGCI_LINT_VERSION ?= v2.5.0
 SETUP_ENVTEST_VERSION ?= release-0.22
-ADDLICENSE_VERSION ?= v1.1.1
 CONTROLLER_TOOLS_VERSION ?= v0.19.0
 ENVTEST_K8S_VERSION ?= 1.34.1
 
-export GOPRIVATE=*.go.opendefense.cloud/kit/
-export GNOSUMDB=*.go.opendefense.cloud/kit/
-export GNOPROXY=*.go.opendefense.cloud/kit/
+export GOPRIVATE=*.go.opendefense.cloud/kit
+export GNOSUMDB=*.go.opendefense.cloud/kit
+export GNOPROXY=*.go.opendefense.cloud/kit
+
+APISERVER_IMG ?= apiserver:latest
+MANAGER_IMG ?= manager:latest
 
 ##@ General
 
@@ -48,12 +49,15 @@ help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 .PHONY: clean
-clean:
+clean: ## Clean local codebase and remove temporary files
 	rm -rf $(LOCALBIN)
 
+.PHONY: codegen
+codegen: openapi-gen ## Run code generation, e.g. openapi
+	OPENAPI_GEN=$(OPENAPI_GEN) ./hack/update-codegen.sh
+
 .PHONY: fmt
-fmt: addlicense ## Add license headers and format code
-	find . -not -path '*/.*' -name '*.go' -exec $(ADDLICENSE) -c 'BWI GmbH and Artifact Conduit contributors' -l apache -s=only {} +
+fmt: ## Format code
 	$(GO) fmt ./...
 
 .PHONY: mod
@@ -63,17 +67,13 @@ mod: ## Do go mod tidy, download, verify
 	@$(GO) mod verify
 
 .PHONY: lint
-lint: addlicense golangci-lint ## Run linters such as golangci-lint and addlicence checks
-	find . -not -path '*/.*' -name '*.go' -not -path './example/*' -exec $(ADDLICENSE) -check  -l apache -s=only -check {} +
+lint: golangci-lint ## Run linters such as golangci-lint and addlicence checks
 	$(GOLANGCI_LINT) run -v
-
-.PHONY: scan
-scan:
-	$(OSV_SCANNER) scan -r .
 
 .PHONY: test
 test: setup-envtest ginkgo ## Run all tests
-	@KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -cover --fail-fast --require-suite -covermode count --output-dir=$(BUILD_PATH) -coverprofile=sl.coverprofile $(testargs)
+	@KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -cover --fail-fast --require-suite -covermode count --output-dir=$(BUILD_PATH) -coverprofile=example.full.coverprofile $(testargs)
+	@cat example.full.coverprofile | grep -v /example/api > example.coverprofile
 
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
@@ -96,12 +96,6 @@ $(GINKGO): $(LOCALBIN)
 	test -s $(LOCALBIN)/ginkgo && $(LOCALBIN)/ginkgo version | grep -q $(subst v,,$(GINKGO_VERSION)) || \
 	GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
-.PHONY: addlicense
-addlicense: $(ADDLICENSE) ## Download addlicense locally if necessary.
-$(ADDLICENSE): $(LOCALBIN)
-	test -s $(LOCALBIN)/addlicense || \
-	GOBIN=$(LOCALBIN) go install github.com/google/addlicense@$(ADDLICENSE_VERSION)
-
 .PHONY: setup-envtest
 setup-envtest: $(SETUP_ENVTEST) ## Download setup-envtest locally if necessary.
 $(SETUP_ENVTEST): $(LOCALBIN)
@@ -110,4 +104,4 @@ $(SETUP_ENVTEST): $(LOCALBIN)
 .PHONY: openapi-gen
 openapi-gen: $(OPENAPI_GEN) ## Download openapi-gen locally if necessary.
 $(OPENAPI_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/openapi-gen || GOBIN=$(LOCALBIN) go install k8s.io/kube-openapi/cmd/openapi-gen
+	GOBIN=$(LOCALBIN) go install k8s.io/kube-openapi/cmd/openapi-gen
