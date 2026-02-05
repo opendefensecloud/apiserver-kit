@@ -1,6 +1,6 @@
 module go.opendefense.cloud/kit
 
-go 1.25.2
+go 1.25.7
 
 require (
 	github.com/ironcore-dev/controller-utils v0.11.0
@@ -15,8 +15,8 @@ require (
 	k8s.io/client-go v0.35.0
 	k8s.io/code-generator v0.35.0
 	k8s.io/component-base v0.35.0
-	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912
-	k8s.io/utils v0.0.0-20260106112306-0fe9cd71b2f8
+	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4
+	k8s.io/utils v0.0.0-20260108192941-914a6e750570
 	sigs.k8s.io/controller-runtime v0.23.1
 	sigs.k8s.io/randfill v1.0.0
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482
