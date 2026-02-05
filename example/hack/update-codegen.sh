@@ -23,11 +23,11 @@ kube::codegen::gen_helpers \
 #       workaround this for now by setting chmod for relevant modules
 #       https://github.com/kubernetes/kubernetes/issues/136295
 function cleanup_workaround {
-  ${SCRIPT_DIR}/use-local-modules.sh --restore
+  "${SCRIPT_DIR}/use-local-modules.sh" --restore
 }
 trap cleanup_workaround EXIT
-${SCRIPT_DIR}/use-local-modules.sh \
-  --dir ${SCRIPT_DIR}/../bin/.modules \
+"${SCRIPT_DIR}/use-local-modules.sh" \
+  --dir "${SCRIPT_DIR}/../bin/.modules" \
   k8s.io/api=https://github.com/kubernetes/api.git \
   k8s.io/apimachinery=https://github.com/kubernetes/apimachinery.git
 go mod tidy
