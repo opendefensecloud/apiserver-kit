@@ -27,7 +27,7 @@ function cleanup_workaround {
 }
 trap cleanup_workaround EXIT
 ${SCRIPT_DIR}/use-local-modules.sh \
-  --dir ${SCRIPT_DIR}/../bin/modules \
+  --dir ${SCRIPT_DIR}/../bin/.modules \
   k8s.io/api=https://github.com/kubernetes/api.git \
   k8s.io/apimachinery=https://github.com/kubernetes/apimachinery.git
 go mod tidy

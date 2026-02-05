@@ -75,8 +75,9 @@ lint: lint-no-golangci golangci-lint ## Run linters such as golangci-lint and ad
 .PHONY: lint-no-golangci
 lint-no-golangci: addlicense
 	find . -not -path '*/.*' -name '*.go' -exec $(ADDLICENSE) -check  -l apache -s=only -check {} +
-	shellcheck hack/*.sh.PHONY: test
+	shellcheck hack/*.sh
 
+.PHONY: test
 test: setup-envtest ginkgo ## Run all tests
 	@KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" $(GINKGO) -r -cover --fail-fast --require-suite -covermode count --output-dir=$(BUILD_PATH) -coverprofile=example.full.coverprofile $(testargs)
 	@cat example.full.coverprofile | grep -v /example/api > example.coverprofile

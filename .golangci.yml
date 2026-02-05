@@ -1,8 +1,4 @@
 version: "2"
-run:
-  skip-dirs:
-    - bin
-    - example/bin
 linters:
   default: none
   settings:
