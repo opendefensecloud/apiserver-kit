@@ -6,7 +6,6 @@ package rest
 import (
 	"fmt"
 
-	"go.opendefense.cloud/kit/apiserver/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,6 +14,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/generic"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/registry/rest"
+
+	"go.opendefense.cloud/kit/apiserver/resource"
 )
 
 // Storage is an alias for the apiserver's rest.Storage interface.
@@ -29,6 +30,7 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 		return nil, nil, fmt.Errorf("given object of type %T does not have metadata", obj)
 	}
 	om := provider.GetObjectMeta()
+
 	return om.GetLabels(), SelectableFields(om), nil
 }
 
@@ -74,5 +76,6 @@ func NewStore(
 	if err := store.CompleteWithOptions(options); err != nil {
 		return nil, err
 	}
+
 	return store, nil
 }

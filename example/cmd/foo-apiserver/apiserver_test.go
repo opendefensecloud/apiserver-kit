@@ -1,12 +1,17 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package main_test
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"go.opendefense.cloud/kit/envtest"
-	"go.opendefense.cloud/kit/example/api/foo/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"go.opendefense.cloud/kit/envtest"
+	"go.opendefense.cloud/kit/example/api/foo/v1alpha1"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Bar", func() {

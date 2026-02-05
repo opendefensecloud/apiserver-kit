@@ -13,6 +13,7 @@ in
   packages = [
     pkgs.gnumake
     pkgs.jq
+    pkgs.shellcheck
     pkgs.osv-scanner
   ];
 

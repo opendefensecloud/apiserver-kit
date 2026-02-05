@@ -1,3 +1,6 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package foo
 
 import (

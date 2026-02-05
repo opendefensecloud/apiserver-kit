@@ -37,6 +37,7 @@ func NewEnvironment(mainPath string, crdDirectoryPaths, apiServiceDirectoryPaths
 		APIServiceDirectoryPaths:       apiServiceDirectoryPaths,
 		ErrorIfAPIServicePathIsMissing: true,
 	}
+
 	return &Environment{
 		env:      env,
 		ext:      ext,
@@ -81,6 +82,7 @@ func (e *Environment) Start(scheme *runtime.Scheme, writer io.Writer) (client.Cl
 	e.cfg = cfg
 	e.k8sClient = k8sClient
 	e.apiServer = apiServer
+
 	return k8sClient, nil
 }
 
@@ -92,6 +94,7 @@ func (e *Environment) Stop() error {
 	if e.ext != nil {
 		err = errors.Join(err, utilsenvtest.StopWithExtensions(e.env, e.ext))
 	}
+
 	return err
 }
 

@@ -6,13 +6,14 @@ package apiserver
 import (
 	"context"
 
-	"go.opendefense.cloud/kit/apiserver/resource"
-	"go.opendefense.cloud/kit/apiserver/rest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apiserver/pkg/server"
+
+	"go.opendefense.cloud/kit/apiserver/resource"
+	"go.opendefense.cloud/kit/apiserver/rest"
 )
 
 type ResourceHandler struct {

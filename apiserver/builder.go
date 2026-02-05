@@ -5,11 +5,11 @@ package apiserver
 
 import (
 	"fmt"
+	"maps"
 	"net"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.opendefense.cloud/kit/apiserver/rest"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -28,6 +28,8 @@ import (
 	baseversion "k8s.io/component-base/version"
 	openapicommon "k8s.io/kube-openapi/pkg/common"
 	netutils "k8s.io/utils/net"
+
+	"go.opendefense.cloud/kit/apiserver/rest"
 )
 
 // ExtraAdmissionInitializers is a callback that returns a SharedInformerFactory and admission plugin initializers.
@@ -94,6 +96,7 @@ func (b *Builder) WithOpenAPIDefinitions(name, version string, defs openapicommo
 		config.OpenAPIV3Config.Info.Title = name
 		config.OpenAPIV3Config.Info.Version = name
 	})
+
 	return b
 }
 
@@ -103,6 +106,7 @@ func (b *Builder) WithAPIGroupFn(fn APIGroupFn) *Builder {
 		return b
 	}
 	b.apiGroupFns = append(b.apiGroupFns, fn)
+
 	return b
 }
 
@@ -118,6 +122,7 @@ func (b *Builder) WithExtraAdmissionInitializers(f ExtraAdmissionInitializers) *
 		return b
 	}
 	b.extraAdmissionInitializers = f
+
 	return b
 }
 
@@ -127,6 +132,7 @@ func (b *Builder) WithSharedInformerFactory(f SharedInformerFactory) *Builder {
 		return b
 	}
 	b.sharedInformerFactories = append(b.sharedInformerFactories, f)
+
 	return b
 }
 
@@ -138,6 +144,7 @@ func (b *Builder) WithFlags(fns ...AddFlagsFn) *Builder {
 		}
 		b.addFlagsFns = append(b.addFlagsFns, fn)
 	}
+
 	return b
 }
 
@@ -181,6 +188,7 @@ func (b *Builder) Execute() int {
 			}
 			// Collect informer factories from admission setup.
 			b.sharedInformerFactories = append(b.sharedInformerFactories, informerFactory)
+
 			return pluginInitialisers, nil
 		}
 	}
@@ -200,6 +208,7 @@ func (b *Builder) Execute() int {
 			if b.skipDefaultComponentGlobalsRegistrySet {
 				return nil
 			}
+
 			return b.componentGlobalsRegistry.Set()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -278,6 +287,7 @@ func (b *Builder) Execute() int {
 				for _, sharedInformerFactory := range b.sharedInformerFactories {
 					sharedInformerFactory.Start(context.Done())
 				}
+
 				return nil
 			})
 
@@ -322,12 +332,13 @@ func (b *Builder) Execute() int {
 			return nil
 		}
 		kubeVer := version.MustParse(baseversion.DefaultKubeBinaryVersion)
-		// "1.2" maps to kubeVer
+		// nolint:gosec
 		offset := int(ver.Minor()) - 2
 		mappedVer := kubeVer.OffsetMinor(offset)
 		if mappedVer.GreaterThan(kubeVer) {
 			return kubeVer
 		}
+
 		return mappedVer
 	}
 	utilruntime.Must(b.componentGlobalsRegistry.SetVersionMapping(b.componentName, basecompatibility.DefaultKubeComponent, versionToKubeVersion))
@@ -352,18 +363,15 @@ func mergeVersionedResourcesStorageMap(a map[string]map[string]rest.Storage, b m
 		if _, ok := c[version]; !ok {
 			c[version] = map[string]rest.Storage{}
 		}
-		for resource, store := range storeMap {
-			c[version][resource] = store
-		}
+		maps.Copy(c[version], storeMap)
 	}
 	// Merge entries from b into c.
 	for version, storeMap := range b {
 		if _, ok := c[version]; !ok {
 			c[version] = map[string]rest.Storage{}
 		}
-		for resource, store := range storeMap {
-			c[version][resource] = store
-		}
+		maps.Copy(c[version], storeMap)
 	}
+
 	return c
 }

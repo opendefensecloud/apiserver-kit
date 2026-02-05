@@ -6,13 +6,13 @@ package rest
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 // testObj is a small helper type used to implement several of the
@@ -28,8 +28,9 @@ func (t *testObj) DeepCopyObject() runtime.Object {
 	if t == nil {
 		return nil
 	}
-	copy := *t
-	return &copy
+	clone := *t
+
+	return &clone
 }
 
 func (t *testObj) GetObjectMeta() *metav1.ObjectMeta { return &t.ObjectMeta }
@@ -76,7 +77,7 @@ func (t *testObj) ConvertToTable(ctx context.Context, _ runtime.Object) (*metav1
 		},
 		Rows: []metav1.TableRow{
 			{
-				Cells: []interface{}{t.Name, t.Status},
+				Cells: []any{t.Name, t.Status},
 			},
 		},
 	}, nil
@@ -93,8 +94,9 @@ func (t *testObjList) DeepCopyObject() runtime.Object {
 	if t == nil {
 		return nil
 	}
-	copy := *t
-	return &copy
+	clone := *t
+
+	return &clone
 }
 
 // testObjListWithConvertor is a list type that implements ConvertToTable
@@ -112,7 +114,7 @@ func (t *testObjListWithConvertor) ConvertToTable(ctx context.Context, _ runtime
 		},
 		Rows: []metav1.TableRow{
 			{
-				Cells: []interface{}{len(t.Items), "testobjs"},
+				Cells: []any{len(t.Items), "testobjs"},
 			},
 		},
 	}, nil
@@ -199,7 +201,7 @@ var _ = Describe("DefaultStrategy", func() {
 		Expect(tbl.ColumnDefinitions[0].Name).To(Equal("Name"))
 		Expect(tbl.ColumnDefinitions[1].Name).To(Equal("Status"))
 		Expect(tbl.Rows).To(HaveLen(1))
-		Expect(tbl.Rows[0].Cells).To(Equal([]interface{}{"test-obj", "ready"}))
+		Expect(tbl.Rows[0].Cells).To(Equal([]any{"test-obj", "ready"}))
 	})
 
 	It("should use testObj's ConvertToTable implementation with DefaultStrategy", func() {
@@ -212,7 +214,7 @@ var _ = Describe("DefaultStrategy", func() {
 		Expect(tbl.ColumnDefinitions[0].Name).To(Equal("Name"))
 		Expect(tbl.ColumnDefinitions[1].Name).To(Equal("Status"))
 		Expect(tbl.Rows).To(HaveLen(1))
-		Expect(tbl.Rows[0].Cells).To(Equal([]interface{}{"my-object", "active"}))
+		Expect(tbl.Rows[0].Cells).To(Equal([]any{"my-object", "active"}))
 	})
 
 	It("should use testObj's ConvertToTable for items in testObjList", func() {
@@ -233,8 +235,8 @@ var _ = Describe("DefaultStrategy", func() {
 		Expect(tbl.ColumnDefinitions[0].Name).To(Equal("Name"))
 		Expect(tbl.ColumnDefinitions[1].Name).To(Equal("Status"))
 		// Verify row data
-		Expect(tbl.Rows[0].Cells).To(Equal([]interface{}{"obj1", "ready"}))
-		Expect(tbl.Rows[1].Cells).To(Equal([]interface{}{"obj2", "pending"}))
+		Expect(tbl.Rows[0].Cells).To(Equal([]any{"obj1", "ready"}))
+		Expect(tbl.Rows[1].Cells).To(Equal([]any{"obj2", "pending"}))
 	})
 
 	It("should use list's ConvertToTable implementation if explicitly implemented", func() {
@@ -258,7 +260,7 @@ var _ = Describe("DefaultStrategy", func() {
 		Expect(tbl.ColumnDefinitions[0].Name).To(Equal("Count"))
 		Expect(tbl.ColumnDefinitions[1].Name).To(Equal("Resource"))
 		// Verify row data shows count and resource type
-		Expect(tbl.Rows[0].Cells).To(Equal([]interface{}{3, "testobjs"}))
+		Expect(tbl.Rows[0].Cells).To(Equal([]any{3, "testobjs"}))
 	})
 })
 

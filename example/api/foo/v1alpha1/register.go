@@ -1,10 +1,14 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package v1alpha1
 
 import (
-	"go.opendefense.cloud/kit/example/api/foo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"go.opendefense.cloud/kit/example/api/foo"
 )
 
 // GroupName is the group name used in this package
@@ -39,6 +43,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ClusterBarList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
+
 	return nil
 }
 

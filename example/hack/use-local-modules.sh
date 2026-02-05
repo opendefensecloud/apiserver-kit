@@ -262,7 +262,7 @@ remove_module_from_gomod() {
     # Use sed to remove the line containing the module
     # Escape forward slashes in the module name for use in sed regex
     local escaped_module="${module//\//\\/}"
-    sed -i.bak "/^[[:space:]]*$escaped_module[[:space:]]/d" "$GOMOD"
+    sed -i.bak "/^[[:space:]]*${escaped_module}[[:space:]]/d" "$GOMOD"
     rm -f "$GOMOD.bak"
 
     log_success "Removed $module from go.mod"
@@ -277,7 +277,7 @@ add_replace_directive() {
     local escaped_module="${module//\//\\/}"
 
     # Check if replace already exists
-    if grep -qE "^[[:space:]]*replace[[:space:]]+$escaped_module[[:space:]]*=>" "$GOMOD"; then
+    if grep -qE "^[[:space:]]*replace[[:space:]]+${escaped_module}[[:space:]]*=>" "$GOMOD"; then
         log_warn "Replace directive already exists for: $module"
         return 0
     fi

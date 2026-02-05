@@ -1,10 +1,14 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package install
 
 import (
-	"go.opendefense.cloud/kit/example/api/foo"
-	"go.opendefense.cloud/kit/example/api/foo/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	"go.opendefense.cloud/kit/example/api/foo"
+	"go.opendefense.cloud/kit/example/api/foo/v1alpha1"
 )
 
 // Install registers the API group and adds types to a scheme

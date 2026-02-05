@@ -1,10 +1,13 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package fuzzer
 
 import (
-	"go.opendefense.cloud/kit/example/api/foo"
+	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/randfill"
 
-	runtimeserializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	"go.opendefense.cloud/kit/example/api/foo"
 )
 
 // Funcs returns the fuzzer functions for the apps api group.

@@ -1,3 +1,6 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package foo
 
 import (
@@ -36,5 +39,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ClusterBar{},
 		&ClusterBarList{},
 	)
+
 	return nil
 }

@@ -1,3 +1,6 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Package tools
 
 //go:build tools

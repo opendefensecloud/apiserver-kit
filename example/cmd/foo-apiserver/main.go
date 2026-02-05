@@ -1,16 +1,20 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
 	"os"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"go.opendefense.cloud/kit/apiserver"
 	"go.opendefense.cloud/kit/example/api/foo"
 	"go.opendefense.cloud/kit/example/api/foo/install"
 	"go.opendefense.cloud/kit/example/api/foo/v1alpha1"
 	"go.opendefense.cloud/kit/example/client-go/openapi"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (

@@ -4,12 +4,13 @@
 package apiserver
 
 import (
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-
-	"go.opendefense.cloud/kit/apiserver/rest"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"go.opendefense.cloud/kit/apiserver/rest"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("mergeVersionedResourcesStorageMap", func() {
@@ -20,7 +21,7 @@ var _ = Describe("mergeVersionedResourcesStorageMap", func() {
 		Expect(result).To(BeEmpty())
 	})
 
-	It("should return copy of a when b is empty", func() {
+	It("should return clone of a when b is empty", func() {
 		a := map[string]map[string]rest.Storage{
 			"v1": {
 				"pods":     nil,
@@ -35,7 +36,7 @@ var _ = Describe("mergeVersionedResourcesStorageMap", func() {
 		Expect(result["v1"]).To(HaveKey("services"))
 	})
 
-	It("should return copy of b when a is empty", func() {
+	It("should return clone of b when a is empty", func() {
 		a := map[string]map[string]rest.Storage{}
 		b := map[string]map[string]rest.Storage{
 			"v1beta1": {
@@ -207,8 +208,9 @@ func (m *mockStorage) DeepCopyObject() runtime.Object {
 	if m == nil {
 		return nil
 	}
-	copy := *m
-	return &copy
+	clone := *m
+
+	return &clone
 }
 
 // GetObjectKind implements runtime.Object interface.

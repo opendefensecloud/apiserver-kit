@@ -6,7 +6,6 @@ package rest
 import (
 	"context"
 
-	"go.opendefense.cloud/kit/apiserver/resource"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -17,6 +16,8 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/names"
+
+	"go.opendefense.cloud/kit/apiserver/resource"
 )
 
 // Strategy defines the set of hooks and behaviors used by the API server for resource storage operations.
@@ -64,6 +65,7 @@ func (d DefaultStrategy) GenerateName(base string) string {
 	if n, ok := d.Object.(NameGenerator); ok {
 		return n.GenerateName(base)
 	}
+
 	return names.SimpleNameGenerator.GenerateName(base)
 }
 
@@ -75,6 +77,7 @@ func (d DefaultStrategy) NamespaceScoped() bool {
 	if n, ok := d.Object.(Scoper); ok {
 		return n.NamespaceScoped()
 	}
+
 	return true
 }
 
@@ -103,6 +106,7 @@ func (DefaultStrategy) Validate(ctx context.Context, obj runtime.Object) field.E
 	if v, ok := obj.(Validater); ok {
 		return v.Validate(ctx)
 	}
+
 	return field.ErrorList{}
 }
 
@@ -114,6 +118,7 @@ func (d DefaultStrategy) AllowCreateOnUpdate() bool {
 	if n, ok := d.Object.(AllowCreateOnUpdater); ok {
 		return n.AllowCreateOnUpdate()
 	}
+
 	return false
 }
 
@@ -125,6 +130,7 @@ func (d DefaultStrategy) AllowUnconditionalUpdate() bool {
 	if n, ok := d.Object.(AllowUnconditionalUpdater); ok {
 		return n.AllowUnconditionalUpdate()
 	}
+
 	return false
 }
 
@@ -140,6 +146,7 @@ func (DefaultStrategy) ValidateUpdate(ctx context.Context, obj, old runtime.Obje
 	if v, ok := obj.(ValidateUpdater); ok {
 		return v.ValidateUpdate(ctx, old)
 	}
+
 	return field.ErrorList{}
 }
 
@@ -164,6 +171,7 @@ func (d DefaultStrategy) ConvertToTable(
 		if m, err := meta.Accessor(obj); err == nil {
 			table.ResourceVersion = m.GetResourceVersion()
 		}
+
 		return table, nil
 	}
 
@@ -185,6 +193,7 @@ func (d DefaultStrategy) ConvertToTable(
 					table.Continue = m.GetContinue()
 					table.RemainingItemCount = m.GetRemainingItemCount()
 				}
+
 				return table, nil
 			}
 		}

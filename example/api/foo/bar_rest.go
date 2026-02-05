@@ -1,10 +1,14 @@
+// Copyright 2026 BWI GmbH and contributors
+// SPDX-License-Identifier: Apache-2.0
+
 package foo
 
 import (
-	"go.opendefense.cloud/kit/apiserver/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"go.opendefense.cloud/kit/apiserver/resource"
 )
 
 var _ resource.Object = &Bar{}
