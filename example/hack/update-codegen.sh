@@ -11,13 +11,6 @@ PROJECT_DIR="$SCRIPT_DIR/.."
 # shellcheck disable=SC2269
 OPENAPI_GEN="$OPENAPI_GEN"
 
-# we set up a temporary GOPATH as we are manipulating modules, check NOTE below
-GOPATH="$PROJECT_DIR/bin/tmp"
-mkdir -p "$GOPATH"
-
-echo "Changing CWD and using different GOPATH=$GOPATH"
-(cd "$PROJECT_DIR"; go mod download)
-
 CODEGEN_PKG=$(go list -m -f '{{.Dir}}' k8s.io/code-generator)
 # shellcheck disable=SC1091 # we trust kube_codegen.sh
 source "${CODEGEN_PKG}/kube_codegen.sh"
@@ -29,14 +22,15 @@ kube::codegen::gen_helpers \
 # NOTE: unsure why, but openapi-gen opens files not in read-only mode, so let's
 #       workaround this for now by setting chmod for relevant modules
 #       https://github.com/kubernetes/kubernetes/issues/136295
-declare -a GOMODS=(
-  "k8s.io/apimachinery"
-  "k8s.io/api"
-)
-echo "Setting permissions for files of relevant go modules to 644"
-for MOD in "${GOMODS[@]}"; do
-  find "$(go list -json -m -u "${MOD}" | jq -r '.Dir')" -type f -exec chmod 644 -- {} +
-done
+function cleanup_workaround {
+  ${SCRIPT_DIR}/use-local-modules.sh --restore
+}
+trap cleanup_workaround EXIT
+${SCRIPT_DIR}/use-local-modules.sh \
+  --dir ${SCRIPT_DIR}/../bin/modules \
+  k8s.io/api=https://github.com/kubernetes/api.git \
+  k8s.io/apimachinery=https://github.com/kubernetes/apimachinery.git
+go mod tidy
 
 kube::codegen::gen_openapi \
     --output-dir "${PROJECT_DIR}/client-go/openapi" \
