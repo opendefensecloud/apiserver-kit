@@ -52,6 +52,16 @@ func (m *MyResource) GetGroupResource() schema.GroupResource {
 func (m *MyResource) CopyStatusTo(obj runtime.Object) {
     obj.(*MyResource).Status = m.Status
 }
+
+// Optional: set singularName for kubectl usage
+func (m *MyResource) SingularName() string {
+    return "myresource"
+}
+
+// Optional: set shortNames for kubectl usage
+func (m *MyResource) ShortNames() []string {
+    return []string{"mr", "mrs"}
+}
 ```
 
 ### 2. Build and run the API server
