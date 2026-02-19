@@ -93,3 +93,18 @@ type ValidateUpdater interface {
 	// the object.
 	ValidateUpdate(ctx context.Context, obj runtime.Object) field.ErrorList
 }
+
+// ShortNamesProvider allows a resource to specify short names for kubectl.
+// Short names allow users to use shorter commands like "kubectl get po" instead of
+// "kubectl get pods".
+type ShortNamesProvider interface {
+	// ShortNames returns a list of short names for the resource.
+	ShortNames() []string
+}
+
+// SingularNameProvider returns the singular name of the resource.
+// This is used by kubectl for discovery and display (e.g., "pod" instead of "pods").
+type SingularNameProvider interface {
+	// GetSingularName returns the singular form of the resource name.
+	GetSingularName() string
+}
