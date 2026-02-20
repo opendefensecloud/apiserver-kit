@@ -52,6 +52,16 @@ func (m *MyResource) GetGroupResource() schema.GroupResource {
 func (m *MyResource) CopyStatusTo(obj runtime.Object) {
     obj.(*MyResource).Status = m.Status
 }
+
+// Optional: set singularName for kubectl usage
+func (m *MyResource) GetSingularName() string {
+    return "myresource"
+}
+
+// Optional: set shortNames for kubectl usage
+func (m *MyResource) ShortNames() []string {
+    return []string{"mr", "mrs"}
+}
 ```
 
 ### 2. Build and run the API server
@@ -128,16 +138,16 @@ var _ = AfterSuite(func() {
 
 Resources can implement optional interfaces to customize API server behavior:
 
-| Interface | Purpose |
-|-----------|---------|
-| `Validater` | Validate on create |
-| `ValidateUpdater` | Validate on update |
-| `PrepareForCreater` | Normalize before create |
-| `PrepareForUpdater` | Normalize before update |
-| `Canonicalizer` | Transform to canonical form |
-| `AllowCreateOnUpdater` | Allow PUT to create |
+| Interface                   | Purpose                               |
+| ---                         | ---                                   |
+| `Validater`                 | Validate on create                    |
+| `ValidateUpdater`           | Validate on update                    |
+| `PrepareForCreater`         | Normalize before create               |
+| `PrepareForUpdater`         | Normalize before update               |
+| `Canonicalizer`             | Transform to canonical form           |
+| `AllowCreateOnUpdater`      | Allow PUT to create                   |
 | `AllowUnconditionalUpdater` | Allow updates without resourceVersion |
-| `TableConverter` | Custom kubectl table output |
+| `TableConverter`            | Custom kubectl table output           |
 
 Example validation:
 

@@ -52,13 +52,13 @@ func SelectableFields(obj *metav1.ObjectMeta) fields.Set {
 //   - optsGetter: RESTOptionsGetter for storage backend configuration
 //
 // Returns:
-//   - *genericregistry.Store: configured store for the resource
+//   - rest.Storage: configured store for the resource (may be wrapped for ShortNamesProvider)
 //   - error: if store setup fails
 func NewStore(
 	scheme *runtime.Scheme,
 	single, list func() runtime.Object,
 	gr schema.GroupResource,
-	strategy Strategy, optsGetter generic.RESTOptionsGetter) (*genericregistry.Store, error) {
+	strategy Strategy, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
 	store := &genericregistry.Store{
 		NewFunc:                   single,
 		NewListFunc:               list,
@@ -71,6 +71,28 @@ func NewStore(
 		DeleteStrategy:            strategy,
 	}
 
+	// If the strategy implements SingularNameProvider, use the custom singular name.
+	if sn, ok := strategy.(SingularNameProvider); ok {
+		singularName := sn.GetSingularName()
+		if singularName != "" {
+			store.SingularQualifiedResource = schema.GroupResource{
+				Group:    gr.Group,
+				Resource: singularName,
+			}
+		}
+	}
+
+	// If the strategy implements ShortNamesProvider, wrap the store to expose short names.
+	if sn, ok := strategy.(ShortNamesProvider); ok && len(sn.ShortNames()) > 0 {
+		wrapped := &storeWithShortNames{Store: store, shortNames: sn.ShortNames()}
+		options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
+		if err := wrapped.CompleteWithOptions(options); err != nil {
+			return nil, err
+		}
+
+		return wrapped, nil
+	}
+
 	// StoreOptions wires up REST options and attribute extraction for filtering.
 	options := &generic.StoreOptions{RESTOptions: optsGetter, AttrFunc: GetAttrs}
 	if err := store.CompleteWithOptions(options); err != nil {
@@ -78,4 +100,27 @@ func NewStore(
 	}
 
 	return store, nil
+}
+
+// storeWithShortNames wraps a genericregistry.Store to provide short names for a resource.
+// This implements the ShortNamesProvider interface, allowing kubectl to use short aliases.
+type storeWithShortNames struct {
+	*genericregistry.Store
+	shortNames []string
+}
+
+// ShortNames returns the list of short names for the resource.
+func (s *storeWithShortNames) ShortNames() []string {
+	return s.shortNames
+}
+
+// Unwrap returns the underlying *genericregistry.Store.
+// This is useful when you need to access the store directly, e.g., for setting
+// the status subresource update strategy.
+func Unwrap(s rest.Storage) *genericregistry.Store {
+	if wrapped, ok := s.(*storeWithShortNames); ok {
+		return wrapped.Store
+	}
+
+	return s.(*genericregistry.Store)
 }

@@ -225,3 +225,27 @@ func (s *PrepareForUpdaterStrategy) PrepareForUpdate(ctx context.Context, obj, o
 		s.OverrideFn(ctx, obj, old)
 	}
 }
+
+// ShortNames returns the short names for the resource if the object implements ShortNamesProvider.
+func (d DefaultStrategy) ShortNames() []string {
+	if d.Object == nil {
+		return nil
+	}
+	if n, ok := d.Object.(ShortNamesProvider); ok {
+		return n.ShortNames()
+	}
+
+	return nil
+}
+
+// GetSingularName returns the singular name of the resource if the object implements SingularNameProvider.
+func (d DefaultStrategy) GetSingularName() string {
+	if d.Object == nil {
+		return ""
+	}
+	if n, ok := d.Object.(SingularNameProvider); ok {
+		return n.GetSingularName()
+	}
+
+	return ""
+}

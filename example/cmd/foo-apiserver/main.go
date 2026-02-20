@@ -21,9 +21,7 @@ const (
 	componentName = "foo"
 )
 
-var (
-	scheme = runtime.NewScheme()
-)
+var scheme = runtime.NewScheme()
 
 func init() {
 	install.Install(scheme)
@@ -42,6 +40,7 @@ func init() {
 		&metav1.APIResourceList{},
 	)
 }
+
 func main() {
 	code := apiserver.NewBuilder(scheme).
 		WithComponentName(componentName).
