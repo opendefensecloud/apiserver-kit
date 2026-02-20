@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/apiserver/pkg/server"
 
 	"go.opendefense.cloud/kit/apiserver/resource"
@@ -66,13 +65,14 @@ func Resource[E resource.Object, T resource.ObjectWithDeepCopy[E]](obj T, gvs ..
 					copyableOld.DeepCopyInto(copyableObj)
 				}
 				// We need to access the underlying *registry.Store for status subresource.
-				// This is safe because we know rest.NewStore returns it (possibly wrapped).
-				statusStore := store.(*registry.Store)
+				// Use rest.Unwrap to handle both wrapped (storeWithShortNames) and unwrapped cases.
+				// Make a value copy so we can modify only the status copy's UpdateStrategy.
+				statusStore := *rest.Unwrap(store)
 				statusStore.UpdateStrategy = &rest.PrepareForUpdaterStrategy{
 					RESTUpdateStrategy: statusStore.UpdateStrategy,
 					OverrideFn:         statusPrepareForUpdate,
 				}
-				storage[gr.Resource+"/status"] = statusStore
+				storage[gr.Resource+"/status"] = &statusStore
 			}
 
 			apiGroupInfo := server.NewDefaultAPIGroupInfo(gr.Group, scheme, metav1.ParameterCodec, codecs)

@@ -113,3 +113,14 @@ type storeWithShortNames struct {
 func (s *storeWithShortNames) ShortNames() []string {
 	return s.shortNames
 }
+
+// Unwrap returns the underlying *genericregistry.Store.
+// This is useful when you need to access the store directly, e.g., for setting
+// the status subresource update strategy.
+func Unwrap(s rest.Storage) *genericregistry.Store {
+	if wrapped, ok := s.(*storeWithShortNames); ok {
+		return wrapped.Store
+	}
+
+	return s.(*genericregistry.Store)
+}
