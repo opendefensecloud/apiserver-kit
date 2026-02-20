@@ -148,6 +148,8 @@ Resources can implement optional interfaces to customize API server behavior:
 | `AllowCreateOnUpdater`      | Allow PUT to create                   |
 | `AllowUnconditionalUpdater` | Allow updates without resourceVersion |
 | `TableConverter`            | Custom kubectl table output           |
+| `ShortNamesProvider`        | Custom short names for the resource   |
+| `SingularNameProvider`      | Define the singular name              |
 
 Example validation:
 
