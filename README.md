@@ -54,7 +54,7 @@ func (m *MyResource) CopyStatusTo(obj runtime.Object) {
 }
 
 // Optional: set singularName for kubectl usage
-func (m *MyResource) SingularName() string {
+func (m *MyResource) GetSingularName() string {
     return "myresource"
 }
 
