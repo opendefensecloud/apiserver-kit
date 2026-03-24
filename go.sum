@@ -133,6 +133,8 @@ github.com/ironcore-dev/controller-utils v0.11.0 h1:vQhZgPxxFwmSi+fSlPEuwCmI5sOP
 github.com/ironcore-dev/controller-utils v0.11.0/go.mod h1:kPIgIjGNMA5zUlwH04rCdDbYnvvDtd79z3Rgav1Yrpg=
 github.com/ironcore-dev/ironcore v0.2.4 h1:i/RqiMIdzaptuDR6EKSX9hbeolj7AfTuT+4v1ZC4Jeg=
 github.com/ironcore-dev/ironcore v0.2.4/go.mod h1:idYH/uyjxsIx8k3PFfXNtwfEpF9bBzBNe0aJFpIZpxs=
+github.com/ironcore-dev/ironcore v0.3.0 h1:l/q9xprt5iNG0HaySFDCGLX19tco/MNUMGc0+11Od8o=
+github.com/ironcore-dev/ironcore v0.3.0/go.mod h1:qM1oGh2FcNmdyWPhrSbz+PQMt72aqMO62UgAyfWCa+c=
 github.com/jonboulle/clockwork v0.5.0 h1:Hyh9A8u51kptdkR+cqRpT1EebBwTn1oK9YfGYbdFz6I=
 github.com/jonboulle/clockwork v0.5.0/go.mod h1:3mZlmanh0g2NDKO5TWZVJAfofYk64M7XN3SzBPjZF60=
 github.com/joshdk/go-junit v1.0.0 h1:S86cUKIdwBHWwA6xCmFlf3RTLfVXYQfvanM5Uh+K6GE=
@@ -372,6 +374,8 @@ google.golang.org/grpc v1.78.0 h1:K1XZG/yGDJnzMdd/uZHAkVqJE+xIDOcmdSFZkBUicNc=
 google.golang.org/grpc v1.78.0/go.mod h1:I47qjTo4OKbMkjA/aOOwxDIiPSBofUtQUI5EfpWvW7U=
 google.golang.org/grpc v1.79.1 h1:zGhSi45ODB9/p3VAawt9a+O/MULLl9dpizzNNpq7flY=
 google.golang.org/grpc v1.79.1/go.mod h1:KmT0Kjez+0dde/v2j9vzwoAScgEPx/Bw1CYChhHLrHQ=
+google.golang.org/grpc v1.79.3 h1:sybAEdRIEtvcD68Gx7dmnwjZKlyfuc61Dyo9pGXXkKE=
+google.golang.org/grpc v1.79.3/go.mod h1:KmT0Kjez+0dde/v2j9vzwoAScgEPx/Bw1CYChhHLrHQ=
 google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
 google.golang.org/protobuf v1.36.11/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
