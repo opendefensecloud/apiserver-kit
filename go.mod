@@ -1,6 +1,6 @@
 module go.opendefense.cloud/kit
 
-go 1.25.7
+go 1.26.1
 
 require (
 	github.com/ironcore-dev/controller-utils v0.11.0
@@ -78,7 +78,6 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
 	github.com/prometheus/procfs v0.19.2 // indirect
-	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.etcd.io/etcd/api/v3 v3.6.8 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.8 // indirect
