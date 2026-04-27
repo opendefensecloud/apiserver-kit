@@ -7,6 +7,8 @@ common.mk:
 
 HACK_DIR ?= $(shell cd hack 2>/dev/null && pwd)
 
+ENVTEST_K8S_VERSION ?= 1.34.1
+
 export GOPRIVATE=*.go.opendefense.cloud/kit/
 export GNOSUMDB=*.go.opendefense.cloud/kit/
 export GNOPROXY=*.go.opendefense.cloud/kit/
