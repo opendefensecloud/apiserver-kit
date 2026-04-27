@@ -15,7 +15,7 @@ export GNOPROXY=*.go.opendefense.cloud/kit/
 
 .PHONY: fmt
 fmt: $(ADDLICENSE) $(GOLANGCI_LINT) ## Add license headers and format code
-	git ls-files | grep '.*\.go$$' | xargs $(ADDLICENSE) -c 'BWI GmbH and Artifact Conduit contributors' -l apache -s=only
+	git ls-files | grep '.*\.go$$' | xargs $(ADDLICENSE) -c 'BWI GmbH and contributors' -l apache -s=only
 	$(GO) fmt ./...
 	$(GOLANGCI_LINT) run --fix
 
