@@ -49,3 +49,5 @@ deep-docs/
 
 # Temp files from example
 /example/bin
+
+common.mk
