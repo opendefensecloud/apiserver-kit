@@ -1,5 +1,5 @@
 # Include ODC common make targets
-DEV_KIT_VERSION := v1.0.2
+DEV_KIT_VERSION := v1.0.4
 -include common.mk
 common.mk:
 	curl --fail -sSL https://raw.githubusercontent.com/opendefensecloud/dev-kit/$(DEV_KIT_VERSION)/common.mk -o common.mk.download && \
@@ -13,9 +13,12 @@ export GOPRIVATE=*.go.opendefense.cloud/kit/
 export GNOSUMDB=*.go.opendefense.cloud/kit/
 export GNOPROXY=*.go.opendefense.cloud/kit/
 
+LICENSE := apache
+LICENSE_COMMENT := BWI GmbH and contributors
+
 .PHONY: fmt
-fmt: $(ADDLICENSE) $(GOLANGCI_LINT) ## Add license headers and format code
-	git ls-files | grep '.*\.go$$' | xargs $(ADDLICENSE) -c 'BWI GmbH and contributors' -l apache -s=only
+fmt: $(GOLANGCI_LINT) ## Run formatters
+	$(MAKE) addlicense license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='*\.go'
 	$(GO) fmt ./...
 	$(GOLANGCI_LINT) run --fix
 
@@ -23,8 +26,8 @@ fmt: $(ADDLICENSE) $(GOLANGCI_LINT) ## Add license headers and format code
 lint: lint-no-golangci golangci-lint ## Run linters
 
 .PHONY: lint-no-golangci
-lint-no-golangci: $(ADDLICENSE) shellcheck ## Run linters but not golangci-lint to exit early in CI/CD pipeline
-	git ls-files | grep '.*\.go$$' | xargs $(ADDLICENSE) -c 'BWI GmbH and contributors' -l apache -s=only -check
+lint-no-golangci: shellcheck ## Run linters but not golangci-lint to exit early in CI/CD pipeline
+	$(MAKE) addlicense-check license=apache comment='$(LICENSE_COMMENT)' pattern='*\.go'
 
 .PHONY: test
 test: $(SETUP_ENVTEST) $(GINKGO) ## Run all tests
