@@ -50,4 +50,8 @@ deep-docs/
 # Temp files from example
 /example/bin
 
+# dev-kit common.mk cache files
 common.mk
+.common.mk-version
+.common.mk-checked
+.common.mk-download					
