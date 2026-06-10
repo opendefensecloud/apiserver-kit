@@ -11,6 +11,7 @@ PROJECT_DIR="$SCRIPT_DIR/.."
 # shellcheck disable=SC2269
 OPENAPI_GEN="$OPENAPI_GEN"
 
+go mod download k8s.io/code-generator
 CODEGEN_PKG=$(go list -m -f '{{.Dir}}' k8s.io/code-generator)
 # shellcheck disable=SC1091 # we trust kube_codegen.sh
 source "${CODEGEN_PKG}/kube_codegen.sh"
