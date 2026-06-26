@@ -33,7 +33,12 @@ lint: lint-no-golangci golangci-lint ## Run linters
 lint-no-golangci: shellcheck ## Run linters but not golangci-lint to exit early in CI/CD pipeline
 	$(MAKE) addlicense-check license=apache comment='$(LICENSE_COMMENT)' pattern='*\.go'
 
+.PHONY: envtest-binaries-sideload
+envtest-binaries-sideload: $(SETUP_ENVTEST) ## Populate the envtest cache for ENVTEST_K8S_VERSION from upstream K8s/etcd releases when controller-tools hasn't packaged it. No-op if already cached. See hack/envtest-sideload.sh.
+	@SETUP_ENVTEST=$(SETUP_ENVTEST) BIN_DIR=$(LOCALBIN) YQ=$(YQ) \
+		bash hack/envtest-sideload.sh $(ENVTEST_K8S_VERSION)
+
 .PHONY: test
-test: $(SETUP_ENVTEST) $(GINKGO) ## Run all tests
-	@KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
+test: $(SETUP_ENVTEST) $(GINKGO) envtest-binaries-sideload ## Run all tests
+	@KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -i -p path)" \
 	$(GINKGO) -r -cover --fail-fast --require-suite -covermode count --output-dir=$(BUILD_PATH) -coverprofile=sl.coverprofile --skip-package ./example/bin/ $(testargs)
