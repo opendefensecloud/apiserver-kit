@@ -9,6 +9,8 @@ on:
     paths:
       - "**/*.go"
       - ".github/workflows/golang.yaml"
+      - ".golangci.yml"
+      - "Makefile"
       - "devenv.nix"
       - "go.mod"
       - "go.sum"
@@ -17,6 +19,8 @@ on:
     paths:
       - "**/*.go"
       - ".github/workflows/golang.yaml"
+      - ".golangci.yml"
+      - "Makefile"
       - "devenv.nix"
       - "go.mod"
       - "go.sum"
