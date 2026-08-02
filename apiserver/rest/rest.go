@@ -5,6 +5,7 @@ package rest
 
 import (
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -87,6 +88,34 @@ func RegisterFieldLabelConversions(scheme *runtime.Scheme, gvk schema.GroupVersi
 	})
 }
 
+// GroupScopedResourcePrefix returns the etcd storage ResourcePrefix for a
+// resource, scoped by its API group as "<group>/<resource>" (resource
+// lowercased). Scoping every object's key by its group keeps the storage layout
+// independent of how many groups the server exposes: two groups may share a
+// resource name without colliding, and the key does not move when a server goes
+// from exposing one group to several.
+func GroupScopedResourcePrefix(gr schema.GroupResource) string {
+	return gr.Group + "/" + strings.ToLower(gr.Resource)
+}
+
+// groupScopedRESTOptionsGetter wraps a RESTOptionsGetter to force each resource's
+// storage ResourcePrefix to GroupScopedResourcePrefix, so the group is encoded in
+// the object's key rather than relying on a group-specific storage root.
+type groupScopedRESTOptionsGetter struct {
+	delegate       generic.RESTOptionsGetter
+	resourcePrefix string
+}
+
+func (g groupScopedRESTOptionsGetter) GetRESTOptions(resource schema.GroupResource, example runtime.Object) (generic.RESTOptions, error) {
+	opts, err := g.delegate.GetRESTOptions(resource, example)
+	if err != nil {
+		return opts, err
+	}
+	opts.ResourcePrefix = g.resourcePrefix
+
+	return opts, nil
+}
+
 // NewStore constructs a genericregistry.Store for a Kubernetes resource type.
 // It wires up the storage strategies, table conversion, and predicate functions.
 //
@@ -106,6 +135,9 @@ func NewStore(
 	single, list func() runtime.Object,
 	gr schema.GroupResource,
 	strategy Strategy, optsGetter generic.RESTOptionsGetter) (rest.Storage, error) {
+	// Scope the storage key by API group so multiple groups can be served from
+	// one etcd root without resource-name collisions.
+	optsGetter = groupScopedRESTOptionsGetter{delegate: optsGetter, resourcePrefix: GroupScopedResourcePrefix(gr)}
 	store := &genericregistry.Store{
 		NewFunc:                   single,
 		NewListFunc:               list,

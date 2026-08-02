@@ -159,21 +159,34 @@ func (b *Builder) WithGroupVersions(gvs ...schema.GroupVersion) *Builder {
 // Execute builds and runs the API server, returning an exit code suitable for os.Exit().
 // It configures storage, admission, informers, and launches the server with all registered resources.
 func (b *Builder) Execute() int {
-	// Validate that all group versions belong to the same API group.
-	groupName := ""
+	// Collect the distinct API groups exposed by this server. A single server
+	// may expose more than one group (the downstream install loop below builds a
+	// per-group APIGroupInfo map and installs each group independently).
+	groupOrder := []string{}
+	seenGroup := map[string]bool{}
 	for _, gv := range b.groupVersions {
-		if groupName != "" && groupName != gv.Group {
-			panic("all exposed resources expected to have the same group")
+		if !seenGroup[gv.Group] {
+			seenGroup[gv.Group] = true
+			groupOrder = append(groupOrder, gv.Group)
 		}
-		groupName = gv.Group
 	}
-	// Get the ordered group versions to ensure storage encoding matches the registered types.
-	orderedGroupVersions := b.scheme.PrioritizedVersionsForGroup(groupName)
+	// Get the ordered group versions (across all exposed groups) so storage
+	// encoding matches the registered types for every group.
+	orderedGroupVersions := []schema.GroupVersion{}
+	for _, g := range groupOrder {
+		orderedGroupVersions = append(orderedGroupVersions, b.scheme.PrioritizedVersionsForGroup(g)...)
+	}
+
+	// The etcd registry root. A single, group-count-independent root is used for
+	// any number of exposed groups: each object's storage key is scoped by its
+	// API group via the per-resource ResourcePrefix (see
+	// rest.GroupScopedResourcePrefix), so groups never collide under this root.
+	registryPrefix := "/registry"
 
 	// Set up default recommended options if not already configured.
 	if b.recommendedOptions == nil {
 		b.recommendedOptions = genericoptions.NewRecommendedOptions(
-			fmt.Sprintf("/registry/%s", groupName),
+			registryPrefix,
 			b.codecs.LegacyCodec(orderedGroupVersions...),
 		)
 	}

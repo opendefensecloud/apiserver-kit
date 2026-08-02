@@ -9,10 +9,45 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/registry/generic"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+// fakeRESTOptionsGetter returns a fixed RESTOptions, standing in for the
+// storage-backed getter in unit tests.
+type fakeRESTOptionsGetter struct {
+	prefix string
+}
+
+func (f fakeRESTOptionsGetter) GetRESTOptions(_ schema.GroupResource, _ runtime.Object) (generic.RESTOptions, error) {
+	return generic.RESTOptions{ResourcePrefix: f.prefix}, nil
+}
+
+var _ = Describe("Group-scoped storage keys", func() {
+	It("scopes the ResourcePrefix by group and lowercases the resource", func() {
+		Expect(GroupScopedResourcePrefix(schema.GroupResource{Group: "net.example.com", Resource: "Widgets"})).
+			To(Equal("net.example.com/widgets"))
+	})
+
+	It("gives same-named resources in different groups distinct keys", func() {
+		a := GroupScopedResourcePrefix(schema.GroupResource{Group: "net.example.com", Resource: "widgets"})
+		b := GroupScopedResourcePrefix(schema.GroupResource{Group: "platform.example.com", Resource: "widgets"})
+		Expect(a).ToNot(Equal(b))
+	})
+
+	It("overrides the delegate ResourcePrefix so the group is encoded in the key", func() {
+		gr := schema.GroupResource{Group: "net.example.com", Resource: "widgets"}
+		getter := groupScopedRESTOptionsGetter{
+			delegate:       fakeRESTOptionsGetter{prefix: "widgets"},
+			resourcePrefix: GroupScopedResourcePrefix(gr),
+		}
+		opts, err := getter.GetRESTOptions(gr, nil)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(opts.ResourcePrefix).To(Equal("net.example.com/widgets"))
+	})
+})
 
 var _ = Describe("GetAttrs and SelectableFields", func() {
 	It("should extract labels and fields from a resource.Object", func() {
