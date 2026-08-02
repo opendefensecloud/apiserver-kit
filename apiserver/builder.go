@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -46,6 +47,16 @@ type SharedInformerFactory interface {
 
 type AddFlagsFn func(*pflag.FlagSet)
 
+// AdmissionPluginRegisterFn registers a custom admission plugin on the given registry.
+type AdmissionPluginRegisterFn func(*admission.Plugins)
+
+// admissionPluginReg is a pending custom admission plugin registration applied
+// to the RecommendedOptions.Admission options during Execute().
+type admissionPluginReg struct {
+	name     string
+	register AdmissionPluginRegisterFn
+}
+
 // APIGroupFn returns an APIGroupInfo for installing an API group into the server.
 type APIGroupFn func(scheme *runtime.Scheme, codecs serializer.CodecFactory, c *genericapiserver.CompletedConfig) genericapiserver.APIGroupInfo
 
@@ -65,6 +76,7 @@ type Builder struct {
 	recommendedConfigFns                   []RecommendedConfigFn
 	apiGroupFns                            []APIGroupFn
 	addFlagsFns                            []AddFlagsFn
+	admissionPlugins                       []admissionPluginReg
 }
 
 // NewBuilder creates a new API server builder with the given runtime scheme.
@@ -122,6 +134,22 @@ func (b *Builder) WithExtraAdmissionInitializers(f ExtraAdmissionInitializers) *
 		return b
 	}
 	b.extraAdmissionInitializers = f
+
+	return b
+}
+
+// WithAdmissionPlugin registers a custom admission plugin and enables it by
+// default. The register callback must call plugins.Register(name, ...) on the
+// provided registry; the name is appended to the recommended plugin order so
+// the plugin runs unless explicitly disabled via --disable-admission-plugins.
+//
+// Plugin names must be unique; Execute rejects a duplicate name with a
+// non-zero result.
+func (b *Builder) WithAdmissionPlugin(name string, register AdmissionPluginRegisterFn) *Builder {
+	if register == nil || name == "" {
+		return b
+	}
+	b.admissionPlugins = append(b.admissionPlugins, admissionPluginReg{name: name, register: register})
 
 	return b
 }
@@ -192,6 +220,26 @@ func (b *Builder) Execute() int {
 	}
 	// Configure storage to use the ordered group versions for encoding.
 	b.recommendedOptions.Etcd.StorageConfig.EncodeVersioner = schema.GroupVersions(orderedGroupVersions)
+	// Reject duplicate admission plugin names before invoking any registration
+	// callback: admission.Plugins.Register calls klog.Fatalf on a repeated name,
+	// which would hard-crash the process during the second registration. Detect
+	// duplicates up front and fail with a non-zero result instead.
+	seenPlugin := map[string]struct{}{}
+	for _, p := range b.admissionPlugins {
+		if _, dup := seenPlugin[p.name]; dup {
+			fmt.Fprintf(os.Stderr, "duplicate admission plugin name %q registered via WithAdmissionPlugin\n", p.name)
+
+			return 1
+		}
+		seenPlugin[p.name] = struct{}{}
+	}
+	// Register and enable custom admission plugins. Each plugin registers itself
+	// on the admission registry and is appended to the recommended plugin order
+	// so it is enabled by default (subject to --disable-admission-plugins).
+	for _, p := range b.admissionPlugins {
+		p.register(b.recommendedOptions.Admission.Plugins)
+		b.recommendedOptions.Admission.RecommendedPluginOrder = append(b.recommendedOptions.Admission.RecommendedPluginOrder, p.name)
+	}
 	// Wire up admission initializers if provided.
 	if b.extraAdmissionInitializers != nil {
 		b.recommendedOptions.ExtraAdmissionInitializers = func(c *genericapiserver.RecommendedConfig) ([]admission.PluginInitializer, error) {
