@@ -24,6 +24,12 @@ type Storage = rest.Storage
 
 // GetAttrs extracts the labels and fields from a runtime.Object for use in storage predicates.
 // Returns an error if the object does not implement resource.Object (i.e., lacks metadata).
+//
+// The returned field set always contains the default ObjectMeta-derived fields
+// (metadata.name / metadata.namespace). If the object additionally implements
+// SelectableFieldsProvider, its contributed fields (typically spec fields) are
+// merged on top, enabling spec field-selector filtering. Objects that do not
+// implement the interface behave exactly as before.
 func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	provider, ok := obj.(resource.Object)
 	if !ok {
@@ -31,13 +37,54 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	}
 	om := provider.GetObjectMeta()
 
-	return om.GetLabels(), SelectableFields(om), nil
+	fieldSet := SelectableFields(om)
+	if sfp, ok := obj.(SelectableFieldsProvider); ok {
+		for k, v := range sfp.SelectableFields() {
+			fieldSet[k] = v
+		}
+	}
+
+	return om.GetLabels(), fieldSet, nil
 }
 
 // SelectableFields returns a set of fields (name, namespace, etc.) for the given ObjectMeta.
 // Used for field selectors in storage and API queries.
 func SelectableFields(obj *metav1.ObjectMeta) fields.Set {
 	return generic.ObjectMetaFieldsSet(obj, true)
+}
+
+// RegisterFieldLabelConversions registers pass-through FieldLabelConversionFuncs on
+// the scheme for the given GVKs and field-selector keys.
+//
+// A field selector supplied on a list/watch request is validated against the
+// scheme during list-options conversion; any key not registered via
+// AddFieldLabelConversionFunc is rejected as unknown. This helper registers a
+// pass-through conversion (identity: the label==value, the key unchanged) for
+// every supported key, plus the always-supported ObjectMeta keys
+// (metadata.name / metadata.namespace), so the apiserver accepts them.
+//
+// It is a no-op when keys is empty, keeping default behavior unchanged for
+// resources that do not advertise extra selectors.
+func RegisterFieldLabelConversions(scheme *runtime.Scheme, gvk schema.GroupVersionKind, keys []string) error {
+	if len(keys) == 0 {
+		return nil
+	}
+
+	supported := map[string]struct{}{
+		"metadata.name":      {},
+		"metadata.namespace": {},
+	}
+	for _, k := range keys {
+		supported[k] = struct{}{}
+	}
+
+	return scheme.AddFieldLabelConversionFunc(gvk, func(label, value string) (string, string, error) {
+		if _, ok := supported[label]; ok {
+			return label, value, nil
+		}
+
+		return "", "", fmt.Errorf("field label not supported: %s", label)
+	})
 }
 
 // NewStore constructs a genericregistry.Store for a Kubernetes resource type.

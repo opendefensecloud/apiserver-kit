@@ -7,6 +7,7 @@ import (
 	"context"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -107,4 +108,35 @@ type ShortNamesProvider interface {
 type SingularNameProvider interface {
 	// GetSingularName returns the singular form of the resource name.
 	GetSingularName() string
+}
+
+// SelectableFieldsProvider is an optional interface a resource type may implement
+// to contribute additional selectable fields (typically spec fields, e.g.
+// "spec.region") for field-selector based list/watch filtering.
+//
+// The returned set is merged on top of the default ObjectMeta-derived fields
+// (metadata.name / metadata.namespace) in GetAttrs. Types that do not implement
+// this interface behave exactly as before (only ObjectMeta fields are selectable).
+//
+// The keys returned here MUST also be advertised via SupportedFieldSelectors so
+// that the apiserver's list-options conversion accepts the corresponding
+// field selectors. See SupportedFieldSelectors.
+type SelectableFieldsProvider interface {
+	// SelectableFields returns the object's additional selectable fields.
+	SelectableFields() fields.Set
+}
+
+// SupportedFieldSelectorsProvider is an optional interface a resource type may
+// implement to advertise the field-selector keys it supports beyond the default
+// ObjectMeta fields (e.g. "spec.region").
+//
+// For each advertised key the resource wiring registers a pass-through
+// FieldLabelConversionFunc on the scheme for the resource's versioned (and
+// internal) GVKs, so the apiserver accepts these selectors during list-options
+// conversion instead of rejecting them as unknown. Types that do not implement
+// this interface behave exactly as before.
+type SupportedFieldSelectorsProvider interface {
+	// SupportedFieldSelectors returns the additional field-selector keys the
+	// resource supports (e.g. []string{"spec.region"}).
+	SupportedFieldSelectors() []string
 }
