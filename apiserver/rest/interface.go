@@ -114,9 +114,12 @@ type SingularNameProvider interface {
 // to contribute additional selectable fields (typically spec fields, e.g.
 // "spec.region") for field-selector based list/watch filtering.
 //
-// The returned set is merged on top of the default ObjectMeta-derived fields
-// (metadata.name / metadata.namespace) in GetAttrs. Types that do not implement
-// this interface behave exactly as before (only ObjectMeta fields are selectable).
+// The returned set is added to the default ObjectMeta-derived fields
+// (metadata.name / metadata.namespace) in GetAttrs. Those ObjectMeta-derived
+// keys are reserved: provider fields are additive only and cannot replace them,
+// so returning "metadata.name" or "metadata.namespace" here has no effect. Types
+// that do not implement this interface behave exactly as before (only ObjectMeta
+// fields are selectable).
 //
 // The keys returned here are advertised to the apiserver's list-options
 // conversion automatically, so implementing this interface alone is enough for

@@ -31,8 +31,9 @@ type Storage = rest.Storage
 // The returned field set always contains the default ObjectMeta-derived fields
 // (metadata.name / metadata.namespace). If the object additionally implements
 // SelectableFieldsProvider, its contributed fields (typically spec fields) are
-// merged on top, enabling spec field-selector filtering. Objects that do not
-// implement the interface behave exactly as before.
+// added, enabling spec field-selector filtering. Those ObjectMeta-derived keys
+// are reserved: provider fields are additive only and cannot overwrite them.
+// Objects that do not implement the interface behave exactly as before.
 func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 	provider, ok := obj.(resource.Object)
 	if !ok {
@@ -42,7 +43,14 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 
 	fieldSet := SelectableFields(om)
 	if sfp, ok := obj.(SelectableFieldsProvider); ok {
-		maps.Copy(fieldSet, sfp.SelectableFields())
+		// Provider fields are additive only: the ObjectMeta-derived keys
+		// (metadata.name / metadata.namespace) are reserved and must not be
+		// overwritten, so add only keys absent from the default set.
+		for k, v := range sfp.SelectableFields() {
+			if _, reserved := fieldSet[k]; !reserved {
+				fieldSet[k] = v
+			}
+		}
 	}
 
 	return om.GetLabels(), fieldSet, nil

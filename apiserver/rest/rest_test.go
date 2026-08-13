@@ -130,6 +130,16 @@ func (t *overrideObj) SupportedFieldSelectors() []string {
 	return []string{"spec.legacyHost"}
 }
 
+// reservedKeyObj returns a reserved ObjectMeta key ("metadata.name") alongside a
+// spec key, to verify provider fields cannot overwrite ObjectMeta-derived keys.
+type reservedKeyObj struct {
+	selectableObj
+}
+
+func (t *reservedKeyObj) SelectableFields() fields.Set {
+	return fields.Set{"metadata.name": "spoofed", "spec.region": "eu"}
+}
+
 var _ = Describe("FieldSelectorKeys", func() {
 	It("returns nil for a resource that advertises no extra selectors", func() {
 		Expect(FieldSelectorKeys(&testObj{})).To(BeNil())
@@ -151,6 +161,17 @@ var _ = Describe("Selectable spec fields", func() {
 		_, fieldsSet, err := GetAttrs(obj)
 		Expect(err).ToNot(HaveOccurred())
 		Expect(fieldsSet).To(HaveKeyWithValue("metadata.name", "a"))
+		Expect(fieldsSet).To(HaveKeyWithValue("spec.region", "eu"))
+	})
+
+	It("does not let provider fields overwrite reserved ObjectMeta keys", func() {
+		obj := &reservedKeyObj{}
+		obj.Name = "real"
+		_, fieldsSet, err := GetAttrs(obj)
+		Expect(err).ToNot(HaveOccurred())
+		// The reserved metadata.name keeps the real ObjectMeta value, not the
+		// provider's spoofed one; additive spec keys are still merged.
+		Expect(fieldsSet).To(HaveKeyWithValue("metadata.name", "real"))
 		Expect(fieldsSet).To(HaveKeyWithValue("spec.region", "eu"))
 	})
 
