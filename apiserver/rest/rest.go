@@ -5,6 +5,7 @@ package rest
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,9 +41,7 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 
 	fieldSet := SelectableFields(om)
 	if sfp, ok := obj.(SelectableFieldsProvider); ok {
-		for k, v := range sfp.SelectableFields() {
-			fieldSet[k] = v
-		}
+		maps.Copy(fieldSet, sfp.SelectableFields())
 	}
 
 	return om.GetLabels(), fieldSet, nil
