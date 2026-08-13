@@ -106,6 +106,44 @@ func (t *selectableObj) SupportedFieldSelectors() []string {
 	return []string{"spec.region"}
 }
 
+// derivedObj implements only SelectableFieldsProvider, so its advertised
+// field-selector keys are derived from the emitted fields.
+type derivedObj struct {
+	metav1.ObjectMeta
+}
+
+func (t *derivedObj) SelectableFields() fields.Set {
+	return fields.Set{"spec.zone": "", "spec.region": ""}
+}
+
+// overrideObj implements both interfaces; SupportedFieldSelectors takes
+// precedence over the keys emitted by SelectableFields.
+type overrideObj struct {
+	metav1.ObjectMeta
+}
+
+func (t *overrideObj) SelectableFields() fields.Set {
+	return fields.Set{"spec.region": ""}
+}
+
+func (t *overrideObj) SupportedFieldSelectors() []string {
+	return []string{"spec.legacyHost"}
+}
+
+var _ = Describe("FieldSelectorKeys", func() {
+	It("returns nil for a resource that advertises no extra selectors", func() {
+		Expect(FieldSelectorKeys(&testObj{})).To(BeNil())
+	})
+
+	It("derives sorted keys from SelectableFieldsProvider when Supported is absent", func() {
+		Expect(FieldSelectorKeys(&derivedObj{})).To(Equal([]string{"spec.region", "spec.zone"}))
+	})
+
+	It("prefers SupportedFieldSelectorsProvider over the derived default", func() {
+		Expect(FieldSelectorKeys(&overrideObj{})).To(Equal([]string{"spec.legacyHost"}))
+	})
+})
+
 var _ = Describe("Selectable spec fields", func() {
 	It("GetAttrs merges SelectableFieldsProvider fields on top of ObjectMeta fields", func() {
 		obj := &selectableObj{Region: "eu"}

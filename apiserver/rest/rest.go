@@ -6,6 +6,7 @@ package rest
 import (
 	"fmt"
 	"maps"
+	"slices"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,6 +52,29 @@ func GetAttrs(obj runtime.Object) (labels.Set, fields.Set, error) {
 // Used for field selectors in storage and API queries.
 func SelectableFields(obj *metav1.ObjectMeta) fields.Set {
 	return generic.ObjectMetaFieldsSet(obj, true)
+}
+
+// FieldSelectorKeys returns the additional field-selector keys a resource
+// advertises beyond the default ObjectMeta fields, applying the following
+// precedence:
+//
+//   - If obj implements SupportedFieldSelectorsProvider, its explicit key set is
+//     used (advanced override — e.g. a key set that differs from the emitted
+//     selectable fields).
+//   - Otherwise, if obj implements SelectableFieldsProvider, the keys are derived
+//     from the emitted fields (sorted for deterministic registration). This
+//     assumes SelectableFields emits every selectable key unconditionally, per
+//     the upstream Kubernetes convention.
+//   - Otherwise nil is returned and the resource keeps default behavior.
+func FieldSelectorKeys(obj any) []string {
+	if fsp, ok := obj.(SupportedFieldSelectorsProvider); ok {
+		return fsp.SupportedFieldSelectors()
+	}
+	if sfp, ok := obj.(SelectableFieldsProvider); ok {
+		return slices.Sorted(maps.Keys(sfp.SelectableFields()))
+	}
+
+	return nil
 }
 
 // RegisterFieldLabelConversions registers pass-through FieldLabelConversionFuncs on

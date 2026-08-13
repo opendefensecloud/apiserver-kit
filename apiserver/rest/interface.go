@@ -118,9 +118,13 @@ type SingularNameProvider interface {
 // (metadata.name / metadata.namespace) in GetAttrs. Types that do not implement
 // this interface behave exactly as before (only ObjectMeta fields are selectable).
 //
-// The keys returned here MUST also be advertised via SupportedFieldSelectors so
-// that the apiserver's list-options conversion accepts the corresponding
-// field selectors. See SupportedFieldSelectors.
+// The keys returned here are advertised to the apiserver's list-options
+// conversion automatically, so implementing this interface alone is enough for
+// the corresponding field selectors to be accepted. For that derivation to be
+// correct the implementation MUST return every selectable key unconditionally
+// (with an empty value when unset), matching the upstream Kubernetes convention.
+// A resource that needs to advertise a different key set may additionally
+// implement SupportedFieldSelectorsProvider, which overrides this default.
 type SelectableFieldsProvider interface {
 	// SelectableFields returns the object's additional selectable fields.
 	SelectableFields() fields.Set
@@ -133,8 +137,11 @@ type SelectableFieldsProvider interface {
 // For each advertised key the resource wiring registers a pass-through
 // FieldLabelConversionFunc on the scheme for the resource's versioned (and
 // internal) GVKs, so the apiserver accepts these selectors during list-options
-// conversion instead of rejecting them as unknown. Types that do not implement
-// this interface behave exactly as before.
+// conversion instead of rejecting them as unknown.
+//
+// This is an advanced override: when omitted, the advertised keys default to
+// those emitted by SelectableFieldsProvider. Implement it only when the
+// advertised key set must differ from the emitted selectable fields.
 type SupportedFieldSelectorsProvider interface {
 	// SupportedFieldSelectors returns the additional field-selector keys the
 	// resource supports (e.g. []string{"spec.region"}).
