@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -46,6 +47,16 @@ type SharedInformerFactory interface {
 
 type AddFlagsFn func(*pflag.FlagSet)
 
+// AdmissionPluginRegisterFn registers a custom admission plugin on the given registry.
+type AdmissionPluginRegisterFn func(*admission.Plugins)
+
+// admissionPluginReg is a pending custom admission plugin registration applied
+// to the RecommendedOptions.Admission options during Execute().
+type admissionPluginReg struct {
+	name     string
+	register AdmissionPluginRegisterFn
+}
+
 // APIGroupFn returns an APIGroupInfo for installing an API group into the server.
 type APIGroupFn func(scheme *runtime.Scheme, codecs serializer.CodecFactory, c *genericapiserver.CompletedConfig) genericapiserver.APIGroupInfo
 
@@ -65,6 +76,7 @@ type Builder struct {
 	recommendedConfigFns                   []RecommendedConfigFn
 	apiGroupFns                            []APIGroupFn
 	addFlagsFns                            []AddFlagsFn
+	admissionPlugins                       []admissionPluginReg
 }
 
 // NewBuilder creates a new API server builder with the given runtime scheme.
@@ -126,6 +138,22 @@ func (b *Builder) WithExtraAdmissionInitializers(f ExtraAdmissionInitializers) *
 	return b
 }
 
+// WithAdmissionPlugin registers a custom admission plugin and enables it by
+// default. The register callback must call plugins.Register(name, ...) on the
+// provided registry; the name is appended to the recommended plugin order so
+// the plugin runs unless explicitly disabled via --disable-admission-plugins.
+//
+// Plugin names must be unique; Execute rejects a duplicate name with a
+// non-zero result.
+func (b *Builder) WithAdmissionPlugin(name string, register AdmissionPluginRegisterFn) *Builder {
+	if register == nil || name == "" {
+		return b
+	}
+	b.admissionPlugins = append(b.admissionPlugins, admissionPluginReg{name: name, register: register})
+
+	return b
+}
+
 // WithSharedInformerFactory registers a SharedInformerFactory to be started when the server starts.
 func (b *Builder) WithSharedInformerFactory(f SharedInformerFactory) *Builder {
 	if f == nil {
@@ -159,26 +187,59 @@ func (b *Builder) WithGroupVersions(gvs ...schema.GroupVersion) *Builder {
 // Execute builds and runs the API server, returning an exit code suitable for os.Exit().
 // It configures storage, admission, informers, and launches the server with all registered resources.
 func (b *Builder) Execute() int {
-	// Validate that all group versions belong to the same API group.
-	groupName := ""
+	// Collect the distinct API groups exposed by this server. A single server
+	// may expose more than one group (the downstream install loop below builds a
+	// per-group APIGroupInfo map and installs each group independently).
+	groupOrder := []string{}
+	seenGroup := map[string]bool{}
 	for _, gv := range b.groupVersions {
-		if groupName != "" && groupName != gv.Group {
-			panic("all exposed resources expected to have the same group")
+		if !seenGroup[gv.Group] {
+			seenGroup[gv.Group] = true
+			groupOrder = append(groupOrder, gv.Group)
 		}
-		groupName = gv.Group
 	}
-	// Get the ordered group versions to ensure storage encoding matches the registered types.
-	orderedGroupVersions := b.scheme.PrioritizedVersionsForGroup(groupName)
+	// Get the ordered group versions (across all exposed groups) so storage
+	// encoding matches the registered types for every group.
+	orderedGroupVersions := []schema.GroupVersion{}
+	for _, g := range groupOrder {
+		orderedGroupVersions = append(orderedGroupVersions, b.scheme.PrioritizedVersionsForGroup(g)...)
+	}
+
+	// The etcd registry root. A single, group-count-independent root is used for
+	// any number of exposed groups: each object's storage key is scoped by its
+	// API group via the per-resource ResourcePrefix (see
+	// rest.GroupScopedResourcePrefix), so groups never collide under this root.
+	registryPrefix := "/registry"
 
 	// Set up default recommended options if not already configured.
 	if b.recommendedOptions == nil {
 		b.recommendedOptions = genericoptions.NewRecommendedOptions(
-			fmt.Sprintf("/registry/%s", groupName),
+			registryPrefix,
 			b.codecs.LegacyCodec(orderedGroupVersions...),
 		)
 	}
 	// Configure storage to use the ordered group versions for encoding.
 	b.recommendedOptions.Etcd.StorageConfig.EncodeVersioner = schema.GroupVersions(orderedGroupVersions)
+	// Reject duplicate admission plugin names before invoking any registration
+	// callback: admission.Plugins.Register calls klog.Fatalf on a repeated name,
+	// which would hard-crash the process during the second registration. Detect
+	// duplicates up front and fail with a non-zero result instead.
+	seenPlugin := map[string]struct{}{}
+	for _, p := range b.admissionPlugins {
+		if _, dup := seenPlugin[p.name]; dup {
+			fmt.Fprintf(os.Stderr, "duplicate admission plugin name %q registered via WithAdmissionPlugin\n", p.name)
+
+			return 1
+		}
+		seenPlugin[p.name] = struct{}{}
+	}
+	// Register and enable custom admission plugins. Each plugin registers itself
+	// on the admission registry and is appended to the recommended plugin order
+	// so it is enabled by default (subject to --disable-admission-plugins).
+	for _, p := range b.admissionPlugins {
+		p.register(b.recommendedOptions.Admission.Plugins)
+		b.recommendedOptions.Admission.RecommendedPluginOrder = append(b.recommendedOptions.Admission.RecommendedPluginOrder, p.name)
+	}
 	// Wire up admission initializers if provided.
 	if b.extraAdmissionInitializers != nil {
 		b.recommendedOptions.ExtraAdmissionInitializers = func(c *genericapiserver.RecommendedConfig) ([]admission.PluginInitializer, error) {

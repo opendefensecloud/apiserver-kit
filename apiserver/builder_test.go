@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apiserver/pkg/admission"
 
 	"go.opendefense.cloud/kit/apiserver/rest"
 
@@ -218,6 +219,21 @@ func (m *mockStorage) DeepCopyObject() runtime.Object {
 func (m *mockStorage) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
 }
+
+var _ = Describe("WithAdmissionPlugin", func() {
+	It("Execute fails with a non-zero result on duplicate plugin names without invoking the callbacks", func() {
+		b := NewBuilder(runtime.NewScheme())
+		registered := 0
+		register := func(*admission.Plugins) { registered++ }
+
+		b.WithAdmissionPlugin("dup", register).WithAdmissionPlugin("dup", register)
+
+		Expect(b.Execute()).ToNot(Equal(0))
+		// Detection happens before any registration callback runs, so neither
+		// callback (and in particular not the second, fatal, Register) is invoked.
+		Expect(registered).To(Equal(0))
+	})
+})
 
 var _ = Describe("Resource with interfaces", func() {
 	Describe("Resource with SingularNameProvider", func() {

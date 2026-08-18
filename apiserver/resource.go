@@ -51,6 +51,35 @@ func Resource[E resource.Object, T resource.ObjectWithDeepCopy[E]](obj T, gvs ..
 				panic(err)
 			}
 
+			// If the resource advertises additional field selectors (e.g. spec
+			// fields), register pass-through field-label conversions so the
+			// apiserver accepts those selectors during list-options conversion.
+			// Registration happens on the internal GVK and every versioned GVK.
+			//
+			// The advertised keys default to those emitted by
+			// SelectableFieldsProvider, with SupportedFieldSelectorsProvider as
+			// an explicit override. See rest.FieldSelectorKeys.
+			keys := rest.FieldSelectorKeys(any(obj))
+			if len(keys) > 0 {
+				kinds, _, kerr := scheme.ObjectKinds(obj)
+				if kerr != nil {
+					panic(kerr)
+				}
+				for _, internalGVK := range kinds {
+					// Internal GVK (unversioned).
+					if err := rest.RegisterFieldLabelConversions(scheme, internalGVK, keys); err != nil {
+						panic(err)
+					}
+					// Versioned GVKs (same group+kind, each requested version).
+					for _, gv := range gvs {
+						versionedGVK := gv.WithKind(internalGVK.Kind)
+						if err := rest.RegisterFieldLabelConversions(scheme, versionedGVK, keys); err != nil {
+							panic(err)
+						}
+					}
+				}
+			}
+
 			storage := map[string]rest.Storage{}
 			storage[gr.Resource] = store
 
