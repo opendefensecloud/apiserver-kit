@@ -4,7 +4,6 @@
 package main_test
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"go.opendefense.cloud/kit/envtest"
@@ -25,11 +24,9 @@ var _ = Describe("Bar", func() {
 		It("should allow creating a bar", func() {
 			By("creating a test bar")
 			bar = &v1alpha1.Bar{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace:    ns.Name,
-					GenerateName: "test-",
-				},
-				Spec: v1alpha1.BarSpec{},
+				Namespace:    ns.Name,
+				GenerateName: "test-",
+				Spec:         v1alpha1.BarSpec{},
 			}
 			Expect(k8sClient.Create(ctx, bar)).To(Succeed())
 			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(bar), bar)).To(Succeed())
@@ -51,10 +48,8 @@ var _ = Describe("Bar", func() {
 		It("should allow creating a bar", func() {
 			By("creating a test bar")
 			bar = &v1alpha1.ClusterBar{
-				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: "test-",
-				},
-				Spec: v1alpha1.BarSpec{},
+				GenerateName: "test-",
+				Spec:         v1alpha1.BarSpec{},
 			}
 			Expect(k8sClient.Create(ctx, bar)).To(Succeed())
 			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(bar), bar)).To(Succeed())

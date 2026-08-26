@@ -190,7 +190,7 @@ var _ = Describe("DefaultStrategy", func() {
 	})
 
 	It("should delegate Canonicalize and ConvertToTable to object", func() {
-		obj := &testObj{ObjectMeta: metav1.ObjectMeta{Name: "test-obj"}, Status: "ready"}
+		obj := &testObj{Name: "test-obj", Status: "ready"}
 		ds := DefaultStrategy{Object: obj}
 		ds.Canonicalize(obj)
 		Expect(obj.Flag).To(BeTrue())
@@ -205,7 +205,7 @@ var _ = Describe("DefaultStrategy", func() {
 	})
 
 	It("should use testObj's ConvertToTable implementation with DefaultStrategy", func() {
-		obj := &testObj{ObjectMeta: metav1.ObjectMeta{Name: "my-object"}, Status: "active"}
+		obj := &testObj{Name: "my-object", Status: "active"}
 		ds := NewDefaultStrategy(obj, nil, schema.GroupResource{Group: "arc", Resource: "testobjs"})
 		tbl, err := ds.ConvertToTable(context.Background(), obj, nil)
 		Expect(err).ToNot(HaveOccurred())
@@ -220,8 +220,8 @@ var _ = Describe("DefaultStrategy", func() {
 	It("should use testObj's ConvertToTable for items in testObjList", func() {
 		list := &testObjList{
 			Items: []testObj{
-				{ObjectMeta: metav1.ObjectMeta{Name: "obj1"}, Status: "ready"},
-				{ObjectMeta: metav1.ObjectMeta{Name: "obj2"}, Status: "pending"},
+				{Name: "obj1", Status: "ready"},
+				{Name: "obj2", Status: "pending"},
 			},
 		}
 		ds := NewDefaultStrategy(&testObj{}, nil, schema.GroupResource{Group: "arc", Resource: "testobjs"})
@@ -241,12 +241,10 @@ var _ = Describe("DefaultStrategy", func() {
 
 	It("should use list's ConvertToTable implementation if explicitly implemented", func() {
 		list := &testObjListWithConvertor{
-			testObjList: testObjList{
-				Items: []testObj{
-					{ObjectMeta: metav1.ObjectMeta{Name: "obj1"}, Status: "ready"},
-					{ObjectMeta: metav1.ObjectMeta{Name: "obj2"}, Status: "pending"},
-					{ObjectMeta: metav1.ObjectMeta{Name: "obj3"}, Status: "running"},
-				},
+			Items: []testObj{
+				{Name: "obj1", Status: "ready"},
+				{Name: "obj2", Status: "pending"},
+				{Name: "obj3", Status: "running"},
 			},
 		}
 		ds := NewDefaultStrategy(&testObj{}, nil, schema.GroupResource{Group: "arc", Resource: "testobjs"})
