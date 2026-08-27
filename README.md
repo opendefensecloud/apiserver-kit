@@ -1,5 +1,7 @@
 # apiserver-kit
 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/opendefensecloud/apiserver-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/opendefensecloud/apiserver-kit)
+
 A Go library for building Kubernetes-style aggregated API servers with minimal boilerplate.
 
 ## Overview
