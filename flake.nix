@@ -24,7 +24,7 @@
       {
         devShells.default = dev-kit.lib.mkShell {
           inherit system;
-          goVersion = "1.27.0";
+          goVersion = "1.27.1";
           preCommitHooks = {
             commitlint.enable = true;
           };
