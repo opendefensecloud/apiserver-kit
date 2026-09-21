@@ -295,3 +295,77 @@ var _ = Describe("PrepareForUpdaterStrategy", func() {
 		Expect(func() { s.PrepareForUpdate(context.Background(), obj, old) }).ToNot(Panic())
 	})
 })
+
+// genObj opts into generation semantics. It deliberately does NOT implement
+// resource.ObjectWithStatusSubResource, so these specs exercise the generation path alone.
+type genObj struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+	Spec string
+}
+
+func (g *genObj) DeepCopyObject() runtime.Object {
+	if g == nil {
+		return nil
+	}
+	clone := *g
+
+	return &clone
+}
+
+func (g *genObj) GetObjectMeta() *metav1.ObjectMeta { return &g.ObjectMeta }
+
+// SpecChanged implements GenerationTracker.
+func (g *genObj) SpecChanged(old runtime.Object) bool {
+	o, ok := old.(*genObj)
+
+	return !ok || g.Spec != o.Spec
+}
+
+var _ = Describe("DefaultStrategy generation semantics", func() {
+	// Upstream BeforeCreate never sets a generation and BeforeUpdate only copies the stored one
+	// forward, so incrementing it is each strategy's job. Without this a resource sits at
+	// generation 0 forever and every status.observedGeneration == metadata.generation test a
+	// controller makes is trivially true.
+	It("starts an opted-in resource at generation 1 on create", func() {
+		obj := &genObj{Spec: "a"}
+		DefaultStrategy{}.PrepareForCreate(context.Background(), obj)
+		Expect(obj.GetGeneration()).To(Equal(int64(1)))
+	})
+
+	It("leaves a resource that has not opted in at generation 0", func() {
+		obj := &testObj{}
+		DefaultStrategy{}.PrepareForCreate(context.Background(), obj)
+		Expect(obj.GetGeneration()).To(Equal(int64(0)))
+	})
+
+	It("increments the generation when the spec changes", func() {
+		old := &genObj{Spec: "a"}
+		old.SetGeneration(7)
+		// BeforeUpdate has already copied the stored generation onto the incoming object.
+		obj := &genObj{Spec: "b"}
+		obj.SetGeneration(7)
+		DefaultStrategy{}.PrepareForUpdate(context.Background(), obj, old)
+		Expect(obj.GetGeneration()).To(Equal(int64(8)))
+	})
+
+	// A label or annotation edit must not make every controller re-reconcile.
+	It("leaves the generation alone when the spec is unchanged", func() {
+		old := &genObj{Spec: "a"}
+		old.SetGeneration(7)
+		obj := &genObj{Spec: "a"}
+		obj.SetGeneration(7)
+		obj.SetLabels(map[string]string{"k": "v"})
+		DefaultStrategy{}.PrepareForUpdate(context.Background(), obj, old)
+		Expect(obj.GetGeneration()).To(Equal(int64(7)))
+	})
+
+	It("leaves a resource that has not opted in alone on update", func() {
+		obj := &testObj{Status: "new"}
+		old := &testObj{Status: "old"}
+		old.SetGeneration(3)
+		obj.SetGeneration(3)
+		DefaultStrategy{}.PrepareForUpdate(context.Background(), obj, old)
+		Expect(obj.GetGeneration()).To(Equal(int64(3)))
+	})
+})
