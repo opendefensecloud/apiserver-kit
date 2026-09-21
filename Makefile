@@ -1,6 +1,6 @@
 # Include ODC common make targets
 DEV_KIT_VERSION := v2.2.0
-DEV_KIT_VERSION := v2.2.0
+
 -include common.mk
 common.mk:
 	@[ -f .common.mk-download ] || \
@@ -19,11 +19,12 @@ export GNOSUMDB=*.go.opendefense.cloud/kit/
 export GNOPROXY=*.go.opendefense.cloud/kit/
 
 LICENSE := apache
-LICENSE_COMMENT := BWI GmbH and contributors
+LICENSE_COMMENT := BWI GmbH and apiserver-kit contributors
+LICENSE_PATTERN := *\.go
 
 .PHONY: fmt
 fmt: $(GOLANGCI_LINT) ## Run formatters
-	$(MAKE) addlicense license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='*\.go'
+	$(MAKE) addlicense license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='$(LICENSE_PATTERN)'
 	$(GO) fmt ./...
 	$(GOLANGCI_LINT) run --fix
 
@@ -32,7 +33,7 @@ lint: lint-no-golangci golangci-lint ## Run linters
 
 .PHONY: lint-no-golangci
 lint-no-golangci: shellcheck ## Run linters but not golangci-lint to exit early in CI/CD pipeline
-	$(MAKE) addlicense-check license=apache comment='$(LICENSE_COMMENT)' pattern='*\.go'
+	$(MAKE) addlicense-check license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='$(LICENSE_PATTERN)'
 
 .PHONY: test
 test: $(SETUP_ENVTEST) $(GINKGO) envtest-binaries-sideload ## Run all tests

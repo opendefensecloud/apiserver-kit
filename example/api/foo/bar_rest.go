@@ -1,4 +1,4 @@
-// Copyright 2026 BWI GmbH and contributors
+// Copyright BWI GmbH and apiserver-kit contributors
 // SPDX-License-Identifier: Apache-2.0
 
 package foo
