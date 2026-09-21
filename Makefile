@@ -32,7 +32,7 @@ fmt: $(GOLANGCI_LINT) ## Run formatters
 lint: lint-no-golangci golangci-lint ## Run linters
 
 .PHONY: lint-no-golangci
-lint-no-golangci: shellcheck ## Run linters but not golangci-lint to exit early in CI/CD pipeline
+lint-no-golangci: $(ADDLICENSE) shellcheck ## Run linters but not golangci-lint to exit early in CI/CD pipeline
 	$(MAKE) addlicense-check license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='$(LICENSE_PATTERN)'
 
 .PHONY: test
