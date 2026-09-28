@@ -4,9 +4,9 @@ go 1.27.1
 
 require (
 	github.com/ironcore-dev/controller-utils v0.14.0
-	github.com/ironcore-dev/ironcore v0.7.0
+	github.com/ironcore-dev/ironcore v0.8.0
 	github.com/onsi/ginkgo/v2 v2.33.0
-	github.com/onsi/gomega v1.43.1
+	github.com/onsi/gomega v1.44.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	k8s.io/api v0.37.0
