@@ -82,15 +82,24 @@ func (d DefaultStrategy) NamespaceScoped() bool {
 }
 
 // PrepareForCreate normalizes the object before creation, delegating to PrepareForCreater if implemented.
+// A resource that implements GenerationTracker also starts at metadata.generation 1.
 func (DefaultStrategy) PrepareForCreate(ctx context.Context, obj runtime.Object) {
 	if v, ok := obj.(PrepareForCreater); ok {
 		v.PrepareForCreate(ctx)
+	}
+	// BeforeCreate sets no generation, so a resource that tracks it starts here. See
+	// GenerationTracker for why this is opt-in.
+	if _, ok := obj.(GenerationTracker); ok {
+		if m, err := meta.Accessor(obj); err == nil {
+			m.SetGeneration(1)
+		}
 	}
 }
 
 // PrepareForUpdate normalizes the object before update.
 // If the object has a status subresource, status is copied from old to new.
 // If PrepareForUpdater is implemented, it is called to further normalize.
+// If GenerationTracker is implemented, metadata.generation is incremented when the spec changed.
 func (DefaultStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Object) {
 	if v, ok := obj.(resource.ObjectWithStatusSubResource); ok {
 		// Copy status from old to new to avoid spec-only updates modifying status.
@@ -98,6 +107,17 @@ func (DefaultStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Ob
 	}
 	if v, ok := obj.(PrepareForUpdater); ok {
 		v.PrepareForUpdate(ctx, old)
+	}
+	// BeforeUpdate has already copied the stored generation onto the incoming object, and it
+	// calls this before persisting, so an increment here is what lands. Only a spec change
+	// counts; status updates never reach this method, because the status subresource installs a
+	// strategy that calls only its own override.
+	if v, ok := obj.(GenerationTracker); ok && v.SpecChanged(old) {
+		newMeta, newErr := meta.Accessor(obj)
+		oldMeta, oldErr := meta.Accessor(old)
+		if newErr == nil && oldErr == nil {
+			newMeta.SetGeneration(oldMeta.GetGeneration() + 1)
+		}
 	}
 }
 

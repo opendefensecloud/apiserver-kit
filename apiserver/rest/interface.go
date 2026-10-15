@@ -70,6 +70,36 @@ type PrepareForUpdater interface {
 	PrepareForUpdate(ctx context.Context, old runtime.Object)
 }
 
+// GenerationTracker opts a resource into Kubernetes generation semantics: DefaultStrategy sets
+// metadata.generation to 1 on create and increments it on every update that changes the spec.
+//
+// This is opt-in rather than automatic because a generic strategy cannot know which part of an
+// arbitrary runtime.Object is its "spec", and because turning it on changes what every controller
+// watching the resource observes. Upstream Kubernetes does the same work per resource: BeforeCreate
+// sets no generation at all, and BeforeUpdate only copies the stored value forward so clients
+// cannot forge it, leaving the increment to each resource's own strategy. A resource that does not
+// implement this interface therefore stays at generation 0 for its whole life — which silently
+// makes every `status.observedGeneration == metadata.generation` comparison a controller performs
+// trivially true, so idempotence short-circuits latch and spec edits are never acted on.
+//
+// Implementations compare their own typed spec, which is exact and needs no reflection:
+//
+//	func (o *Widget) SpecChanged(old runtime.Object) bool {
+//		p, ok := old.(*Widget)
+//
+//		return !ok || !apiequality.Semantic.DeepEqual(o.Spec, p.Spec)
+//	}
+//
+// Only the spec counts. Metadata-only edits (labels, annotations) must not make controllers
+// re-reconcile, and status updates never reach this path: the status subresource installs a
+// strategy that calls only its own override.
+type GenerationTracker interface {
+	// SpecChanged reports whether this object's spec differs from old's. It must report true
+	// when old is not of the same type, so an unexpected pairing is treated as a change rather
+	// than silently skipping the increment.
+	SpecChanged(old runtime.Object) bool
+}
+
 // TableConverter implements an adapted version of rest.TableConverter
 // it can be used by objects to override DefaultStrategy behaviour.
 type TableConverter interface {
