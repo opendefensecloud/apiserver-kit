@@ -14,23 +14,43 @@ on:
       - "devenv.nix"
       - "go.mod"
       - "go.sum"
+  # No paths filter on pull_request: lint and test are required checks, and a
+  # workflow that never starts never reports them. The changes job filters
+  # instead, and a skipped job counts as passed.
   pull_request:
     branches: [main, develop]
-    paths:
-      - "**/*.go"
-      - ".github/workflows/golang.yaml"
-      - ".golangci.yml"
-      - "Makefile"
-      - "devenv.nix"
-      - "go.mod"
-      - "go.sum"
 
 env:
   GO_MODULE: https://github.com/opendefensecloud/apiserver-kit
 
 jobs:
+  changes:
+    runs-on: ubuntu-26.04
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        id: filter
+        with:
+          filters: |
+            backend:
+              - '**/*.go'
+              - '.github/workflows/golang.yaml'
+              - '.golangci.yml'
+              - 'Makefile'
+              - 'flake.lock'
+              - 'flake.nix'
+              - 'go.mod'
+              - 'go.sum'
+              - 'tools.lock'
+
   lint:
     runs-on: ubuntu-26.04
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || github.event_name == 'push'
     outputs:
       go-version: ${{ steps.go-version.outputs.version }}
     steps:
