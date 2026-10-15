@@ -21,20 +21,23 @@ MANAGER_IMG ?= manager:latest
 codegen: $(OPENAPI_GEN) ## Run code generation, e.g. openapi
 	OPENAPI_GEN=$(OPENAPI_GEN) ./hack/update-codegen.sh
 
+LICENSE := apache
+LICENSE_COMMENT := BWI GmbH and apiserver-kit contributors
+LICENSE_PATTERN := *\.go
+
 .PHONY: fmt
-fmt: $(ADDLICENSE) ## Add license headers and format code
-	find . -not -path '*/.*' -name '*.go' -exec $(ADDLICENSE) -c 'BWI GmbH and contributors' -l apache -s=only {} +
+fmt: $(GOLANGCI_LINT) ## Add license headers and format code
+	$(MAKE) addlicense license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='$(LICENSE_PATTERN)'
 	$(GO) fmt ./...
 	$(GOLANGCI_LINT) run --fix
 
 .PHONY: lint
-lint: lint-no-golangci $(GOLANGCI_LINT) ## Run linters such as golangci-lint and addlicence checks
+lint: lint-no-golangci $(GOLANGCI_LINT) ## Run linters such as golangci-lint and addlicense checks
 	$(GOLANGCI_LINT) run -v
 
 .PHONY: lint-no-golangci
-lint-no-golangci: $(ADDLICENSE)
-	find . -not -path '*/.*' -name '*.go' -exec $(ADDLICENSE) -check  -l apache -s=only -check {} +
-	shellcheck hack/*.sh
+lint-no-golangci: $(ADDLICENSE) shellcheck
+	$(MAKE) addlicense-check license=$(LICENSE) comment='$(LICENSE_COMMENT)' pattern='$(LICENSE_PATTERN)'
 
 .PHONY: test
 test: $(SETUP_ENVTEST) $(GINKGO) ## Run all tests
