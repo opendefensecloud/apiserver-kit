@@ -144,6 +144,7 @@ Resources can implement optional interfaces to customize API server behavior:
 | ---                         | ---                                   |
 | `Validater`                 | Validate on create                    |
 | `ValidateUpdater`           | Validate on update                    |
+| `NameValidator`             | Override metadata.name rules          |
 | `PrepareForCreater`         | Normalize before create               |
 | `PrepareForUpdater`         | Normalize before update               |
 | `Canonicalizer`             | Transform to canonical form           |
@@ -164,6 +165,24 @@ func (m *MyResource) Validate(ctx context.Context) field.ErrorList {
     return errs
 }
 ```
+
+### Object name validation
+
+On create, `DefaultStrategy` validates `metadata.name` as a DNS-1123
+subdomain. Resources can override the rules by implementing `NameValidator`
+(the signature matches apimachinery's `ValidateNameFunc`).
+
+Example override to use the stricter DNS1123 Label Rules:
+
+```go
+func (m *MyResource) ValidateName(name string, prefix bool) []string {
+    return apimachineryvalidation.NameIsDNSLabel(name, prefix)
+}
+```
+
+`prefix` is `true` when validating `metadata.generateName`  and `false` when
+validating the final `metadata.name`. Use an apimachinery `NameIsDNS*` helper
+rather than `validation.IsDNS*` so the prefix case is handled correctly.
 
 ## Project Structure
 

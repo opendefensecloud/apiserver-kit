@@ -6,6 +6,7 @@ package rest
 import (
 	"context"
 
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -147,6 +148,32 @@ type allowUnconditional struct {
 }
 
 func (a *allowUnconditional) AllowUnconditionalUpdate(_ context.Context) bool { return true }
+
+// plainObj is a minimal runtime.Object carrying only ObjectMeta, used to test
+// default name validation in isolation. It intentionally implements none of
+// the optional strategy interfaces.
+type plainObj struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+}
+
+func (p *plainObj) DeepCopyObject() runtime.Object {
+	if p == nil {
+		return nil
+	}
+	clone := *p
+
+	return &clone
+}
+
+// labelNameObj implements NameValidator with DNS-1123 label rules.
+type labelNameObj struct {
+	plainObj
+}
+
+func (l *labelNameObj) ValidateName(name string, prefix bool) []string {
+	return apimachineryvalidation.NameIsDNSLabel(name, prefix)
+}
 
 var _ = Describe("DefaultStrategy", func() {
 	It("should use NameGenerator for GenerateName", func() {
@@ -367,5 +394,107 @@ var _ = Describe("DefaultStrategy generation semantics", func() {
 		obj.SetGeneration(3)
 		DefaultStrategy{}.PrepareForUpdate(context.Background(), obj, old)
 		Expect(obj.GetGeneration()).To(Equal(int64(3)))
+	})
+})
+
+var _ = Describe("DefaultStrategy name validation", func() {
+	ds := DefaultStrategy{}
+	ctx := context.Background()
+
+	findErr := func(errs field.ErrorList, fieldPath string) (field.Error, bool) {
+		for _, e := range errs {
+			if e.Field == fieldPath {
+				return *e, true
+			}
+		}
+
+		return field.Error{}, false
+	}
+
+	expectNameError := func(errs field.ErrorList) {
+		e, found := findErr(errs, "metadata.name")
+		Expect(found).To(BeTrue(), "expected a metadata.name error")
+		Expect(e.Type).To(Equal(field.ErrorTypeInvalid))
+	}
+
+	It("should accept valid DNS-1123 subdomain names by default", func() {
+		for _, name := range []string{"valid-name", "valid.name", "a", "valid-name-1"} {
+			obj := &plainObj{Name: name}
+			Expect(ds.Validate(ctx, obj)).To(BeEmpty())
+		}
+	})
+
+	It("should reject names with spaces, underscores, or uppercase characters by default", func() {
+		for _, name := range []string{"has space", "under_score", "Upper-Case"} {
+			obj := &plainObj{Name: name}
+			expectNameError(ds.Validate(ctx, obj))
+		}
+	})
+
+	It("should require a name or generateName when the name is empty", func() {
+		obj := &plainObj{}
+		errs := ds.Validate(ctx, obj)
+		e, found := findErr(errs, "metadata.name")
+		Expect(found).To(BeTrue(), "expected a metadata.name error")
+		Expect(e.Type).To(Equal(field.ErrorTypeRequired))
+		Expect(e.Detail).To(Equal("name or generateName is required"))
+	})
+
+	It("should not require a name when a generateName is given", func() {
+		// The store expands generateName into name before validation.
+		obj := &plainObj{Name: "valid-prefix-x7k2q"}
+		obj.GenerateName = "valid-prefix-"
+		Expect(ds.Validate(ctx, obj)).To(BeEmpty())
+	})
+
+	It("should validate generateName as a prefix", func() {
+		// A trailing dash is valid for a generateName prefix.
+		obj := &plainObj{Name: "foo-x7k2q"}
+		obj.GenerateName = "foo-"
+		Expect(ds.Validate(ctx, obj)).To(BeEmpty())
+
+		// With label rules, a dotted prefix is invalid and reported on
+		// metadata.generateName, in addition to the generated name.
+		lbl := &labelNameObj{Name: "my-app-x7k2q"}
+		lbl.GenerateName = "my.app-"
+		errs := ds.Validate(ctx, lbl)
+		_, found := findErr(errs, "metadata.generateName")
+		Expect(found).To(BeTrue(), "expected a metadata.generateName error")
+	})
+
+	It("should use the object's NameValidator rules instead of DNS-1123 subdomain", func() {
+		// Valid subdomain but not a valid label.
+		obj := &labelNameObj{Name: "has.dots"}
+		expectNameError(ds.Validate(ctx, obj))
+
+		// Valid label, also a valid subdomain.
+		obj = &labelNameObj{Name: "valid-label"}
+		Expect(ds.Validate(ctx, obj)).To(BeEmpty())
+	})
+
+	It("should reject a trailing dash in a final name under label rules", func() {
+		// The same string that is a valid prefix is not a valid final name.
+		obj := &labelNameObj{Name: "foo-"}
+		expectNameError(ds.Validate(ctx, obj))
+	})
+
+	It("should not validate the name on update, only delegate to ValidateUpdater", func() {
+		// Names are validated on create only; updates must not be blocked.
+		plain := &plainObj{Name: "has space"}
+		Expect(ds.ValidateUpdate(ctx, plain, &plainObj{Name: "has space"})).To(BeEmpty())
+
+		// Only the object's own ValidateUpdater errors are returned.
+		obj := &testObj{Name: "bad_name"}
+		errs := ds.ValidateUpdate(ctx, obj, &testObj{})
+		Expect(errs).To(HaveLen(1))
+		Expect(errs[0].Field).To(Equal("spec"))
+	})
+
+	It("should aggregate name errors with Validater errors on create", func() {
+		obj := &testObj{Name: "bad_name"}
+		errs := ds.Validate(ctx, obj)
+		Expect(errs).To(HaveLen(2))
+		Expect(errs[0].Field).To(Equal("metadata.name"))
+		Expect(errs[1].Field).To(Equal("spec"))
 	})
 })

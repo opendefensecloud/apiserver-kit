@@ -125,6 +125,15 @@ type ValidateUpdater interface {
 	ValidateUpdate(ctx context.Context, obj runtime.Object) field.ErrorList
 }
 
+// NameValidator lets an object override the rules used to validate
+// metadata.generateName and metadata.name on create, defaulting to DNS-1123
+// subdomain rules. The signature matches apimachinery's ValidateNameFunc.
+type NameValidator interface {
+	// ValidateName returns validation errors for name. prefix is true when
+	// validating metadata.generateName (trailing dash allowed).
+	ValidateName(name string, prefix bool) []string
+}
+
 // ShortNamesProvider allows a resource to specify short names for kubectl.
 // Short names allow users to use shorter commands like "kubectl get po" instead of
 // "kubectl get pods".

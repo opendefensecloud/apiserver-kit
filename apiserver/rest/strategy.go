@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -121,13 +122,47 @@ func (DefaultStrategy) PrepareForUpdate(ctx context.Context, obj, old runtime.Ob
 	}
 }
 
-// Validate delegates to the object's Validater interface if present, otherwise returns no errors.
-func (DefaultStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
-	if v, ok := obj.(Validater); ok {
-		return v.Validate(ctx)
+// validateObjectName validates metadata.generateName and metadata.name with the
+// object's NameValidator rules, defaulting to DNS-1123 subdomain rules.
+func validateObjectName(obj runtime.Object) field.ErrorList {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return field.ErrorList{}
 	}
 
-	return field.ErrorList{}
+	nameFn := apimachineryvalidation.NameIsDNSSubdomain
+	if nv, ok := obj.(NameValidator); ok {
+		nameFn = nv.ValidateName
+	}
+
+	fldPath := field.NewPath("metadata")
+	var errs field.ErrorList
+	if generateName := accessor.GetGenerateName(); generateName != "" {
+		for _, msg := range nameFn(generateName, true) {
+			errs = append(errs, field.Invalid(fldPath.Child("generateName"), generateName, msg))
+		}
+	}
+
+	name := accessor.GetName()
+	if name == "" {
+		return append(errs, field.Required(fldPath.Child("name"), "name or generateName is required"))
+	}
+	for _, msg := range nameFn(name, false) {
+		errs = append(errs, field.Invalid(fldPath.Child("name"), name, msg))
+	}
+
+	return errs
+}
+
+// Validate checks metadata.name on create  and delegates to the object's
+// Validater interface if present.
+func (DefaultStrategy) Validate(ctx context.Context, obj runtime.Object) field.ErrorList {
+	errs := validateObjectName(obj)
+	if v, ok := obj.(Validater); ok {
+		errs = append(errs, v.Validate(ctx)...)
+	}
+
+	return errs
 }
 
 // AllowCreateOnUpdate returns true if the object allows creation via update (PUT), using AllowCreateOnUpdater if present.
@@ -181,8 +216,8 @@ func (DefaultStrategy) Match(label labels.Selector, field fields.Selector) stora
 
 // ConvertToTable returns a Table representation of the object, using TableConverter if implemented.
 func (d DefaultStrategy) ConvertToTable(
-	ctx context.Context, obj runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
-
+	ctx context.Context, obj runtime.Object, tableOptions runtime.Object,
+) (*metav1.Table, error) {
 	if c, ok := obj.(TableConverter); ok {
 		table, err := c.ConvertToTable(ctx, tableOptions)
 		if err != nil {
