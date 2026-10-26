@@ -8,12 +8,14 @@ on:
     branches: [main, develop]
     paths:
       - "**/*.go"
-      - ".github/workflows/golang.yaml"
+      - ".github/workflows/**"
       - ".golangci.yml"
       - "Makefile"
-      - "devenv.nix"
+      - "flake.lock"
+      - "flake.nix"
       - "go.mod"
       - "go.sum"
+      - "tools.lock"
   # No paths filter on pull_request: lint and test are required checks, and a
   # workflow that never starts never reports them. The changes job filters
   # instead, and a skipped job counts as passed.
@@ -38,7 +40,8 @@ jobs:
           filters: |
             backend:
               - '**/*.go'
-              - '.github/workflows/golang.yaml'
+              # Workflows too: lint checks their dev-kit pins.
+              - '.github/workflows/**'
               - '.golangci.yml'
               - 'Makefile'
               - 'flake.lock'
