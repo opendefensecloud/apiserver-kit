@@ -115,8 +115,8 @@ github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 h1:5VipnvEpbqr2gA2VbM+nYVbkIF2
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0/go.mod h1:Hyl3n6Twe1hvtd9XUXDec4pTvgMSEixRuQKPTMH2bNs=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/ironcore-dev/controller-utils v0.14.0 h1:ZRKcTKHxj8xNJDX1t225YoCTykw7rOR1wingeMm424k=
-github.com/ironcore-dev/controller-utils v0.14.0/go.mod h1:r0ANgOsXV7Xo+V8z93frNJMnZdE1ZWc9j2djOKWEigA=
+github.com/ironcore-dev/controller-utils v0.15.0 h1:K8vMOeY8rMyZcoL67hGvOZxxPb7rlrR6yS5VvcP6Xig=
+github.com/ironcore-dev/controller-utils v0.15.0/go.mod h1:E/3nSv9TxRtSGpejWMwLTxbb9fknTcPhcA8moHXa0sY=
 github.com/ironcore-dev/ironcore v0.8.0 h1:llh4S1ZK9gLdUPBAUb/dODHaiYk69x4Vi+gpF6aM0sg=
 github.com/ironcore-dev/ironcore v0.8.0/go.mod h1:1Jz0yG2Hpt838Rg5WJayj8NjiiSaIwETVogLP/VOynk=
 github.com/jonboulle/clockwork v0.5.0 h1:Hyh9A8u51kptdkR+cqRpT1EebBwTn1oK9YfGYbdFz6I=

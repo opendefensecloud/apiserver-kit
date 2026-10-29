@@ -3,7 +3,7 @@ module go.opendefense.cloud/kit
 go 1.27.3
 
 require (
-	github.com/ironcore-dev/controller-utils v0.14.0
+	github.com/ironcore-dev/controller-utils v0.15.0
 	github.com/ironcore-dev/ironcore v0.8.0
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
