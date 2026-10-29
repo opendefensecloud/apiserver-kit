@@ -1,0 +1,12 @@
+name: Flake closure diff
+on:
+  pull_request:
+    paths: ["flake.lock", "flake.nix"]
+permissions:
+  contents: read
+jobs:
+  closure-diff:
+    uses: opendefensecloud/dev-kit/.github/workflows/flake-closure-diff.yml@6cd9f749d3b2769c8603d0bd77a3ebc23050dfa6 # v3.1.0
+    secrets:
+      cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      cachix-signing-key: ${{ secrets.CACHIX_SIGNING_KEY }}
