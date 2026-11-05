@@ -16,7 +16,7 @@ jobs:
         with:
           persist-credentials: false
       - id: go-version
-        uses: opendefensecloud/dev-kit/.github/actions/get-go-version@7126784179fc6eb70f7216b788537a9d92121642 # v3.2.1
+        uses: opendefensecloud/dev-kit/.github/actions/get-go-version@983ddfc02224cbb84e8fdf875683525881b96a72 # v4.0.0
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ steps.go-version.outputs.version }}
@@ -24,4 +24,4 @@ jobs:
         run: |
           cd example && make codegen
       - name: Check for changes
-        uses: opendefensecloud/dev-kit/.github/actions/diff-check@7126784179fc6eb70f7216b788537a9d92121642 # v3.2.1
+        uses: opendefensecloud/dev-kit/.github/actions/diff-check@983ddfc02224cbb84e8fdf875683525881b96a72 # v4.0.0
