@@ -1,4 +1,4 @@
-DEV_KIT_VERSION := v3.1.1
+DEV_KIT_VERSION := v4.0.0
 -include common.mk
 common.mk:
 	@[ -f .common.mk-download ] || \
