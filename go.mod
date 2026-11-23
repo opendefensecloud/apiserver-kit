@@ -1,6 +1,6 @@
 module go.opendefense.cloud/kit
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/ironcore-dev/controller-utils v0.15.1
